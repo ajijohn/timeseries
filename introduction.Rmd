@@ -1,0 +1,30 @@
+---
+title: "Chapter-0-Introduction"
+author: Aji John
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Timeseries
+
+Time series data is pervasive. The idea of an evaporating time, amd recording a parameter of interest has been done since ages. We all keep record; a diary of events, car service records, timesheets, and so on. The analysis of any timestamped data (or a place holder for timestamp with an ordnal number) forms the premise for time series analysis.
+
+## Show sample timeseries data
+```{r }
+
+```
+
+## Plot
+
+Sample timeseries plots emphasizing chaos, and later showing some structure or pattern to it.
+
+```{echo=FALSE}
+# plot()
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
