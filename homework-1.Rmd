@@ -1,0 +1,230 @@
+---
+title: "Homework-1 - Code/Plots for Problem 2"
+author: "Aji John"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Realizations for 2(a)
+```{r}
+a=-2
+b=1
+sigmasquare = 1
+c = pi/4
+p2ar1 <- rnorm(8,0,1)
+p2ar12 <- rnorm(8,0,1)
+p21 <- function(rn,index)  a+(b*rn[index]) + (c*rn[index-2])
+p2ares1 <- c() 
+p2ares2 <- c() 
+t <- c(1:8)
+#create random process
+for( i in 1:8)
+  p2ares1=c(p2ares1,p21(p2ar1,i))
+for( i in 1:8)
+  p2ares2=c(p2ares2,p21(p2ar12,i))
+
+plot(t,p2ares1[1:8],type="b",lwd=2,
+xaxt="n",ylim=c(-5,5),xlim=c(-20,20),col="black",
+xlab="Time(t)",ylab="X(t)",
+main="Indepenndent Realizations - Problem 2(a)")
+axis(1,at=round(min(p2ares1)):max(p2ares1))
+lines(t,p2ares2[1:8],col="red",type="b",lwd=2)
+legend("topright",legend=c("Realization 1","Realization 2"),
+lty=1,lwd=2,pch=21,col=c("black","red"),
+ncol=2,bty="n",cex=1,
+text.col=c("black","red"),
+inset=0.01)
+
+```
+
+#Realizations for 2(b)
+```{r}
+p2ar1 <- rnorm(8,0,1)
+p2ar12 <- rnorm(8,0,1)
+p21 <- function(rn,index)  (cos(c*index) * rn[2]) + (sin(c*index)*rn[1])
+p2ares1 <- c() 
+p2ares2 <- c() 
+t <- c(1:8)
+#create random process
+for( i in 1:8)
+  p2ares1=c(p2ares1,p21(p2ar1,i))
+
+for( i in 1:8)
+  p2ares2=c(p2ares2,p21(p2ar12,i))
+
+plot(t,p2ares1[1:8],type="b",lwd=2,
+xaxt="n",ylim=c(-5,5),xlim=c(-20,20),col="black",
+xlab="Time(t)",ylab="X(t)",
+main="Indepenndent Realizations - Problem 2(b)")
+axis(1,at=round(min(p2ares1)):max(p2ares1))
+lines(t,p2ares2[1:8],col="red",type="b",lwd=2)
+legend("topright",legend=c("Realization 1","Realization 2"),
+lty=1,lwd=2,pch=21,col=c("black","red"),
+ncol=2,bty="n",cex=0.8,
+text.col=c("black","red"),
+inset=0.01)
+
+```
+
+#Realizations for 2(a)
+```{r}
+
+a=-2
+b=1
+sigmasquare = 1
+c = pi/4
+p2ar1 <- rnorm(8,0,1)
+p2ar12 <- rnorm(8,0,1)
+
+p21 <- function(rn,index)  a+(b*rn[index]) + (c*rn[index-2])
+p2ares1 <- c() 
+p2ares2 <- c() 
+t <- c(1:8)
+#create random process
+for( i in 1:8)
+  p2ares1=c(p2ares1,p21(p2ar1,i))
+
+for( i in 1:8)
+  p2ares2=c(p2ares2,p21(p2ar12,i))
+
+plot(t,p2ares1[1:8],type="b",lwd=2,
+xaxt="n",ylim=c(-5,5),xlim=c(-20,20),col="black",
+xlab="Time(t)",ylab="X(t)",
+main="Indepenndent Realizations - Problem 2(a)")
+axis(1,at=round(min(p2ares1)):max(p2ares1))
+lines(t,p2ares2[1:8],col="red",type="b",lwd=2)
+legend("topright",legend=c("Realization 1","Realization 2"),
+lty=1,lwd=2,pch=21,col=c("black","red"),
+ncol=2,bty="n",cex=0.8,
+text.col=c("black","red"),
+inset=0.01)
+
+```
+
+#Realizations for 2(c)
+```{r}
+p2ar1 <- rnorm(8,0,1)
+p2ar12 <- rnorm(8,0,1)
+
+p21 <- function(rn,index)  (cos(c*index) * rn[index]) + (sin(c*index)*rn[index-1])
+p2ares1 <- c() 
+p2ares2 <- c() 
+t <- c(1:8)
+#create random process
+for( i in 1:8)
+  p2ares1=c(p2ares1,p21(p2ar1,i))
+
+for( i in 1:8)
+  p2ares2=c(p2ares2,p21(p2ar12,i))
+
+plot(t,p2ares1[1:8],type="b",lwd=2,
+xaxt="n",ylim=c(-5,5),xlim=c(-20,20),col="black",
+xlab="Time(t)",ylab="X(t)",
+main="Indepenndent Realizations - Problem 2(c)")
+axis(1,at=round(min(p2ares1)):max(p2ares1))
+lines(t,p2ares2[1:8],col="red",type="b",lwd=2)
+legend("topright",legend=c("Realization 1","Realization 2"),
+lty=1,lwd=2,pch=21,col=c("black","red"),
+ncol=2,bty="n",cex=0.8,
+text.col=c("black","red"),
+inset=0.01)
+
+```
+
+#Realizations for 2(d)
+```{r}
+p2ar1 <- rnorm(8,0,1)
+p2ar12 <- rnorm(8,0,1)
+
+p21 <- function(rn,index)  a + (b * rn[1])
+p2ares1 <- c() 
+p2ares2 <- c() 
+t <- c(1:8)
+#create random process
+for( i in 1:8)
+  p2ares1=c(p2ares1,p21(p2ar1,i))
+
+for( i in 1:8)
+  p2ares2=c(p2ares2,p21(p2ar12,i))
+
+plot(t,p2ares1[1:8],type="b",lwd=2,
+xaxt="n",ylim=c(-5,5),xlim=c(-20,20),col="black",
+xlab="Time(t)",ylab="X(t)",
+main="Indepenndent Realizations - Problem 2(d)")
+axis(1,at=round(min(p2ares1)):max(p2ares1))
+lines(t,p2ares2[1:8],col="red",type="b",lwd=2)
+legend("topright",legend=c("Realization 1","Realization 2"),
+lty=1,lwd=2,pch=21,col=c("black","red"),
+ncol=2,bty="n",cex=0.8,
+text.col=c("black","red"),
+inset=0.01)
+```
+
+#Realizations for 2(e)
+```{r}
+p2ar1 <- rnorm(8,0,1)
+p2ar12 <- rnorm(8,0,1)
+
+p21 <- function(rn,index)   sin(c*index) * rn[1]
+p2ares1 <- c() 
+p2ares2 <- c() 
+t <- c(1:8)
+#create random process
+for( i in 1:8)
+  p2ares1=c(p2ares1,p21(p2ar1,i))
+
+for( i in 1:8)
+  p2ares2=c(p2ares2,p21(p2ar12,i))
+
+plot(t,p2ares1[1:8],type="b",lwd=2,
+xaxt="n",ylim=c(-5,5),xlim=c(-20,20),col="black",
+xlab="Time(t)",ylab="X(t)",
+main="Indepenndent Realizations - Problem 2(e)")
+axis(1,at=round(min(p2ares1)):max(p2ares1))
+lines(t,p2ares2[1:8],col="red",type="b",lwd=2)
+legend("topright",legend=c("Realization 1","Realization 2"),
+lty=1,lwd=2,pch=21,col=c("black","red"),
+ncol=2,bty="n",cex=0.8,
+text.col=c("black","red"),
+inset=0.01)
+
+```
+
+#Realizations for 2(f)
+```{r}
+
+
+p2ar1 <- rnorm(8,0,1)
+p2ar12 <- rnorm(8,0,1)
+
+
+p21 <- function(rn,index)   rn[index] * rn[index-1]
+p2ares1 <- c() 
+p2ares2 <- c() 
+t <- c(1:8)
+#create random process
+for( i in 1:8)
+  p2ares1=c(p2ares1,p21(p2ar1,i))
+
+for( i in 1:8)
+  p2ares2=c(p2ares2,p21(p2ar12,i))
+
+plot(t,p2ares1[1:8],type="b",lwd=2,
+xaxt="n",ylim=c(-5,5),xlim=c(-20,20),col="black",
+xlab="Time(t)",ylab="X(t)",
+main="Indepenndent Realizations - Problem 2(f)")
+axis(1,at=round(min(p2ares1)):max(p2ares1))
+lines(t,p2ares2[1:8],col="red",type="b",lwd=2)
+legend("topright",legend=c("Realization 1","Realization 2"),
+lty=1,lwd=2,pch=21,col=c("black","red"),
+ncol=2,bty="n",cex=0.8,
+text.col=c("black","red"),
+inset=0.01)
+
+```
