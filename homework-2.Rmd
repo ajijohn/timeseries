@@ -1,0 +1,102 @@
+---
+title: "Homework-2 - Code/Plots for Problem 5"
+author: "Aji John"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Solution for 5(a)
+
+### Our theoretical expression is of the form x_t+h = beta* h + alpha*x_t , with h=70,
+
+```{r,echo=FALSE,include=FALSE}
+alpha=1
+beta=2
+n=100
+
+xt <- function(n)  
+{
+  set<-c()
+  for(i in 1:n)
+  {  
+    intv <- alpha + (beta * i)
+    set<-c(set,intv)
+  }    
+  return(set)
+}    
+
+xt_100 <- xt(100)
+
+fit <- lm(xt_100[1:30]~xt_100[71:100])
+```
+
+```{r,echo=FALSE,include=TRUE}
+plot(xt_100[1:30],xt_100[71:100],type="b",lwd=2,
+ylim=c(0,250),xlim=c(0,100),col="black",
+xlab="x_t",ylab="x_t+70",
+main="Lag 70 plot")
+
+```
+
+## Verification  by plotting residuals
+
+### Furthermore, Our linear expression from the plot is x_t+70 = 1 * x_t + 140, slope = 1, and intercept is 140. Slope = alpha = 1, Intercept = beta * h. thus matching the theoretical expression.
+
+
+```{r,echo=FALSE,include=TRUE}
+plot(fit)
+```
+
+#Solution for 5(b)
+
+```{r,echo=FALSE,include=FALSE}
+row_hat <- function(h)
+{
+  
+  top_hat<- 0
+  x_bar <- mean(xt_100)
+  for (t in 1:100-h)
+  {
+    
+     x_tplush <- xt_100[t+h]
+     x_t <- xt_100[t]
+     top_hat <- top_hat + (( x_tplush - x_bar) * ( x_t - x_bar))
+  }
+  
+  bot_hat<- 0
+  
+   for (t in 1:100)
+  {
+    
+     x_t <- xt_100[t]
+     bot_hat <- bot_hat + ( ( x_t - x_bar)^2)
+  }
+  
+  print(paste('th ' ,top_hat))
+  print(paste('bh' , bot_hat))
+  return(top_hat/bot_hat)
+}
+
+for(h in 0:99)
+{
+  print(row_hat(h))
+}
+```
+
+
+## Plotting using the acf
+
+```{r,echo=FALSE,include=TRUE}
+ acf(xt_100, lag.max=99, plot=TRUE)
+``` 
+
+
+#Solution for 5(c)
+
+The approximations do matchup with the plot in part c
