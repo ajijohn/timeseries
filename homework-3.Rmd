@@ -1,0 +1,62 @@
+---
+title: "Homework-3 - Stats 519"
+author: "Aji John"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Problem 8
+
+Problem 8 (8 points). Perform an analysis of the atmospheric carbon dioxide (CO2) time series from Mauna Loa, Hawaii, along the same lines as the analysis of the accidental deaths (AD) series starting with lecture overhead III–82 (the 3rd set of R code on the course Web site has the code used to analyze the AD series). You can read the CO2 data directly into R using co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt").
+
+Please feel free to alter choices that were made in the analysis of the AD series if you deem them to be inappropriate for your analysis of the CO2 series. Create and turn in plots that correspond to overheads III–85, III–87, III–89 (but just show the seasonal pattern for a single year, as is done in III-107), III–92, III–94, III–96, III–97 andIII–98, along with brief descriptions of the steps you took in your analysis (please also turn in the code you used to do your analysis). Finally, state briefly your conclusions about how well the simple modeling approach worked for the CO2 series.
+
+### 
+
+
+```{r,echo=TRUE,include=TRUE}
+co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt")
+str(co2)
+### define function to do filtering ...
+
+filter.with.padding <- function(x,the.filter,iter=1)
+{
+    q <- (length(the.filter)-1)/2
+    n <- length(x)
+    w <- filter(c(rep(x[1],q),x,rep(x[n],q)),the.filter)[(q+1):(q+n)]
+    if(iter > 1) for(i in 2:iter) w <- filter(c(rep(w[1],q),w,rep(w[n],q)),the.filter)[(q+1):(q+n)]
+    return(w)
+}
+
+### overhead III-2
+
+plot(co2$V1,co2$V2,col="blue",xlab="year",typ="l",ylab=expression(x[t]),main=expression(paste("2nd Example: ", CO[2], " Series from Mauna Loa, Hawaii")))
+
+```
+
+### III–85 - Seasonal component taken out
+#### Use a smoothing filter to take the seasonal component out
+```{r,echo=FALSE,include=TRUE}
+co2.years <- seq(1958,2017-1/12,1/12)
+
+m.hat <- filter.with.padding(co2,c(1/24,rep(1/12,11),1/24))
+
+plot(co2.years,co2,col="blue",xlab="year",typ="b",ylab=expression(paste(x[t]," and ", hat(m)[t]," (thousands)")),main="Monthly Counts of Accidental Deaths in USA",cex=0.5)
+lines(co2.years,m.hat,col="red",lwd=2)
+
+```
+
+#Problem 9
+
+Problem 9 (8 points). Here we consider a time series {xt} measuring ambient noise in the ocean from one second to the next. You can read this series directly into R using
+on.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/ocean-noise.txt").
+
+Alteratively, you can access the data either via a link on item 15 in the list on the Data page of the course Web site or by going directly to http://faculty.washington.edu/dbp/s519/Data/ocean-noise.txt
+
+Create plots of (a) the time series {xt}, (b) its unit-lag scatter plot (i.e., xt+1 versus xt) and (c) its sample ACF out to lag 20, along with lines showing 95% confidence intervals for the ACF under the null hypothesis that {xt} is a realization of an IID noise process. Examine the null hypothesis by subjecting {xt} to the portmanteau, turning point, difference-sign, rank and runs tests. State the results of each test and your overall conclusion about the viability of the IID noise hypothesis. How do these formal tests compare with the informal test given in your plot of the sample ACF? (The 4th set of R code on the course Web site has code used to compute the five tests for the examples considered in the course overheads.)
