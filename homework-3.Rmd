@@ -35,16 +35,37 @@ filter.with.padding <- function(x,the.filter,iter=1)
     return(w)
 }
 
+plot.ACFest <- function(ts, main=NULL, n.lags=40)
+{
+    ts.acf <- acf(ts, lag.max=n.lags, plot=FALSE)
+    n.ts <- length(ts)
+    xs <- 1:n.lags
+    ys <- ts.acf$acf[2:(n.lags+1)]
+    plot(xs,ys,typ="h",xlab="h  (lag)",ylab="ACF",ylim=c(-1,1),col="blue",main=main)
+    points(xs,ys,col="red",cex=0.5)
+    xs <- 1:n.lags
+    xs[1] <- xs[1] - 0.25
+    xs[n.lags] <- xs[n.lags] + 0.25
+    lines(xs,1.96*sqrt(n.ts-xs)/n.ts,col="magenta",lty="dashed")
+    lines(xs,-1.96*sqrt(n.ts-xs)/n.ts,col="magenta",lty="dashed")
+    abline(h=0,lty="dashed")
+    CI.hw <- 1.96/sqrt(n.ts)
+    lines(c(0.75,n.lags+0.25),rep(CI.hw,2),col="blue",lty="dashed")
+    lines(c(0.75,n.lags+0.25),rep(-CI.hw,2),col="blue",lty="dashed")
+    return(ts.acf$acf)
+}
 ### overhead III-2
 
-plot(co2$V1,co2$V2,col="blue",xlab="year",typ="l",ylab=expression(x[t]),main=expression(paste("2nd Example: ", CO[2], " Series from Mauna Loa, Hawaii")))
+plot(co2$V1,co2$V2,col="blue",xlab="year",typ="l",
+     ylab=expression(x[t]),main=expression(paste("2nd Example: ", CO[2],
+                                                 " Series from Mauna Loa, Hawaii")))
 
 ```
 
 ### III–85 - Seasonal component taken out
 #### Use a smoothing filter to take the seasonal component out
 
-```{r,echo=FALSE,include=TRUE}
+```{r,echo=FALSE,include=FALSE}
 co2$year <- substring(as.character(co2$V1),1,4)
 
 co2%>% group_by(year) %>% summarise(months=n())
@@ -54,7 +75,7 @@ co2%>% group_by(year) %>% summarise(months=n())
 Take 5 points before the center, and 5 after, and penalize the extremes.
 ### III–85
 
-```{r,echo=FALSE,include=TRUE}
+```{r,echo=TRUE,include=TRUE}
 co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt")
 
 m.hat.co2 <- filter.with.padding(co2$V2,c(1/24,rep(1/12,11),1/24))
@@ -64,7 +85,8 @@ lines(co2$V1,m.hat.co2,col="red",lwd=2)
 
 ```
 ### III–87
-```{r,echo=FALSE,include=TRUE}
+
+```{r,echo=TRUE,include=TRUE}
 
 co2.u <- co2$V2 - m.hat.co2
 
@@ -76,32 +98,82 @@ points(co2$V1[seq(8,696,12)],co2.u[seq(8,696,12)],pch=16,col="red",cex=0.6)
 ```
 ### III–89
 
-```{r,echo=FALSE,include=TRUE}
+```{r,echo=TRUE,include=TRUE}
 
 
 co2.w.j <- rowMeans(matrix(co2.u,nrow=12))
 
-plot(1:12,co2.w.j- mean(co2.w.j),col="blue",xlab="year",typ="b",ylab=expression(hat(s)[j]),main=expression(paste("CO2 Step 3: Form Estimate {",hat(s)[j],"} of Seasonal Pattern")),ylim=c(-9,9),cex=0.5)
-
-
+plot(1:12,co2.w.j- mean(co2.w.j),col="blue",xlab="year",
+     typ="b",ylab=expression(hat(s)[j]),
+     main=expression(paste("CO2 Step 3: Form Estimate {",hat(s)[j],"} of Seasonal Pattern")),
+     ylim=c(-9,9),cex=0.5)
 
 
 ```
 
 ###  III–92 (Deasonalized data with trend estimate)
 
-```{r,echo=FALSE,include=TRUE}
+```{r,echo=TRUE,include=TRUE}
 
+#get all the years(columns), rows(minths)
+#average all the jan, feb... dec
 co2.w.j <- rowMeans(matrix(co2.u,nrow=12))
-co2.s.j.hat <- rep(co2.w.j - mean(co2.w.j),6)
+co2.s.j.hat <- rep(co2.w.j - mean(co2.w.j),59)
 co2.d <- co2$V2 - co2.s.j.hat
 
 co2.d.reg <- lm(co2.d ~ co2$V1 + I(co2$V1^2))
 
-plot(co2$V1,co2.d,col="blue",xlab="year",typ="b",ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (thousands)")),main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),cex=0.5)
+plot(co2$V1,co2.d,col="blue",xlab="year",typ="b",
+     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (thousands)")),
+     main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),
+     cex=0.5)
 lines(co2$V1,fitted(co2.d.reg),col="purple",lwd=2)
 
+```
+### III–94 Residuals removed
 
+```{r,echo=TRUE,include=TRUE}
+
+plot(co2$V1,resid(co2.d.reg),col="blue",xlab="year",typ="b",
+     ylab=expression(paste(r[t] == x[t] - hat(m)[t] - hat(s)[t]," (ppm)")),
+     main=expression(paste("Residuals {",r[t],"} from Removal of {", hat(m)[t],"} and {",hat(s)[t],"}")),
+     cex=0.5)
+
+```
+
+### III–96
+
+** Fails null hypothesis 
+** Any lag, it is correlated
+
+```{r,echo=TRUE,include=TRUE}
+
+phi <- plot.ACFest(resid(co2.d.reg), 
+                   expression(paste("Sample ACF for {", r[t],"}")))[2]
+
+```
+
+
+
+### III–97 
+
+```{r,echo=TRUE,include=TRUE}
+
+co2.z <- resid(co2.d.reg)[-1] - phi*resid(co2.d.reg)[-length(resid(co2.d.reg))]
+
+plot(co2$V1[-1],co2.z ,col="blue",xlab="year",
+     typ="b",ylab=expression(paste(z[t]==r[t]-hat(phi)*r[t-1]," (thousands)")),
+     main=expression(paste("Residuals ",z[t]==r[t]-hat(phi)*r[t-1]," from Fitted AR(1) Model")),
+     cex=0.5)
+
+```
+### III–98
+
+ACF for residuals from the fitted AR(1) model
+
+```{r,echo=TRUE,include=TRUE}
+
+plot.ACFest(co2.z, expression(paste("Sample ACF for {", z[t],"}")))[2]
 
 ```
 
