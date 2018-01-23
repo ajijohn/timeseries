@@ -52,6 +52,8 @@ co2%>% group_by(year) %>% summarise(months=n())
 ```
 
 Take 5 points before the center, and 5 after, and penalize the extremes.
+### III–85
+
 ```{r,echo=FALSE,include=TRUE}
 co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt")
 
@@ -59,6 +61,47 @@ m.hat.co2 <- filter.with.padding(co2$V2,c(1/24,rep(1/12,11),1/24))
 
 plot(co2$V1,co2$V2,col="blue",xlab="year",typ="b",ylab=expression(paste(x[t]," and ", hat(m)[t]," (ppm)")),main="Monthly CO2 Values",cex=0.5)
 lines(co2$V1,m.hat.co2,col="red",lwd=2)
+
+```
+### III–87
+```{r,echo=FALSE,include=TRUE}
+
+co2.u <- co2$V2 - m.hat.co2
+
+plot(co2$V1,co2.u,col="blue",xlab="year",typ="b",ylab=expression(paste(u[t]==x[t]-hat(m)[t]," (ppm)")),main="Preliminary Detrending of CO2 Series",cex=0.5)
+points(co2$V1[seq(8,696,12)],co2.u[seq(8,696,12)],pch=16,col="red",cex=0.6)
+
+
+
+```
+### III–89
+
+```{r,echo=FALSE,include=TRUE}
+
+
+co2.w.j <- rowMeans(matrix(co2.u,nrow=12))
+
+plot(1:12,co2.w.j- mean(co2.w.j),col="blue",xlab="year",typ="b",ylab=expression(hat(s)[j]),main=expression(paste("CO2 Step 3: Form Estimate {",hat(s)[j],"} of Seasonal Pattern")),ylim=c(-9,9),cex=0.5)
+
+
+
+
+```
+
+###  III–92 (Deasonalized data with trend estimate)
+
+```{r,echo=FALSE,include=TRUE}
+
+co2.w.j <- rowMeans(matrix(co2.u,nrow=12))
+co2.s.j.hat <- rep(co2.w.j - mean(co2.w.j),6)
+co2.d <- co2$V2 - co2.s.j.hat
+
+co2.d.reg <- lm(co2.d ~ co2$V1 + I(co2$V1^2))
+
+plot(co2$V1,co2.d,col="blue",xlab="year",typ="b",ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (thousands)")),main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),cex=0.5)
+lines(co2$V1,fitted(co2.d.reg),col="purple",lwd=2)
+
+
 
 ```
 
