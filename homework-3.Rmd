@@ -211,7 +211,7 @@ onoise.reg <- lm(onoise$V1 ~ onoise$t)
 N.onoise <- length(onoise$t)
 
 
-plot(onoise$t,onoise$V1 ,col="blue",xlab="year",typ="b",ylab=expression(x[t]),main="Ocen  floor ambient noise",cex=0.5)
+plot(onoise$t,onoise$V1 ,col="blue",xlab="year",typ="b",ylab=expression(x[t]),main="Ocean  floor ambient noise",cex=0.5)
 lines(onoise$t,fitted(onoise.reg),col="red")
 
 
@@ -238,6 +238,62 @@ onoise.reg.acf <- plot.ACFest(resid(onoise.reg), expression(paste("Sample ACF fo
 hs <- 1:20
 lines(hs,onoise.reg.acf[2]^hs)
 
+```
+
+Few sticklers ar lag 15, 10 ,5,, so would reject the null hypothesis by looking at the ACF plot.
+
+Lets continue with portmanteau test.
+
+```{r,echo=TRUE,include=TRUE}
+
+source("http://faculty.washington.edu/dbp/s519/R-code/diagnostic-tests.R")
+plot.figPortmanteau <- function(Qs, quants, p=0, main=NULL)
+{
+    N.Qs <- length(Qs)
+    hs <- (p+1):(N.Qs+p)
+    plot(hs,quants,typ="n",xlab="h  (lag)",ylab=expression(paste(Q[LB],"(h) and 95% quantile")),xlim=c(0,N.Qs+p),ylim=c(0,max(c(Qs,quants))),main=main)
+    points(hs,Qs,pch=16,col="blue")
+    segments(seq(p+0.75,by=1,length=N.Qs),quants,seq(p+1.25,by=1,length=N.Qs),quants,lwd=2,col="red")
+}
+
+#Housekeeping
+onoise.reg.acf2 <- acf(resid(onoise.reg), lag.max=420, plot=FALSE)$acf
+round(phi <- onoise.reg.acf2[2],3)  # 0.762
+onoise.zs <- resid(onoise.reg)[-1] - phi*resid(onoise.reg)[-N.onoise]
+
+### overhead IV-13
+
+onoise.acf.zs <- acf(onoise.zs, lag.max=20, plot=FALSE)$acf[-1]
+Q.zs <- sapply(4:20,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(onoise.zs))})
+quants.4.20 <- sapply(4:20,function(dof) {qchisq(0.05,dof,lower=FALSE)})
+quants.4.20 <- sapply((4:20)-3,function(dof) {qchisq(0.05,dof,lower=FALSE)})
+
+plot.figPortmanteau(Q.zs,quants.4.20,3,main=expression(paste("Portmanteau Tests of Ocean noise {", z[t],"}")))
 
 
 ```
+
+Dots are above the steps, so reject the null hypothesis
+
+### Diff sign test
+```{r,echo=TRUE,include=TRUE}
+
+
+(results <- difference.sign.test(onoise.zs))
+results$test.sum            # 48
+length(onoise.zs)                  # 97
+results$mu                  # 48
+round(results$var,1)        #  8.2
+round(sqrt(results$var),1)  #  2.9
+results$test                #  0
+results$p.value             #  1
+
+### overhead IV-21
+
+plot(onoise$t[-1],onoise.zs,col="blue",xlab="year",typ="b",ylab=expression(z[t]),main=expression(paste("AR(1) Residuals ", z[t] == r[t]-hat(phi)*r[t-1])),cex=0.5)
+gg <- diff(onoise.zs) > 0
+points((onoise$t[c(-1,-2)])[gg],(onoise.zs[-1])[gg],pch=16,col="red",cex=0.5)
+
+```
+
+
