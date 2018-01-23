@@ -8,6 +8,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
 
@@ -29,7 +30,7 @@ filter.with.padding <- function(x,the.filter,iter=1)
 {
     q <- (length(the.filter)-1)/2
     n <- length(x)
-    w <- filter(c(rep(x[1],q),x,rep(x[n],q)),the.filter)[(q+1):(q+n)]
+    w <- stats::filter(c(rep(x[1],q),x,rep(x[n],q)),the.filter)[(q+1):(q+n)]
     if(iter > 1) for(i in 2:iter) w <- filter(c(rep(w[1],q),w,rep(w[n],q)),the.filter)[(q+1):(q+n)]
     return(w)
 }
@@ -42,13 +43,22 @@ plot(co2$V1,co2$V2,col="blue",xlab="year",typ="l",ylab=expression(x[t]),main=exp
 
 ### III–85 - Seasonal component taken out
 #### Use a smoothing filter to take the seasonal component out
+
 ```{r,echo=FALSE,include=TRUE}
-co2.years <- seq(1958,2017-1/12,1/12)
+co2$year <- substring(as.character(co2$V1),1,4)
 
-m.hat <- filter.with.padding(co2,c(1/24,rep(1/12,11),1/24))
+co2%>% group_by(year) %>% summarise(months=n())
 
-plot(co2.years,co2,col="blue",xlab="year",typ="b",ylab=expression(paste(x[t]," and ", hat(m)[t]," (thousands)")),main="Monthly Counts of Accidental Deaths in USA",cex=0.5)
-lines(co2.years,m.hat,col="red",lwd=2)
+```
+
+Take 5 points before the center, and 5 after, and penalize the extremes.
+```{r,echo=FALSE,include=TRUE}
+co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt")
+
+m.hat.co2 <- filter.with.padding(co2$V2,c(1/24,rep(1/12,11),1/24))
+
+plot(co2$V1,co2$V2,col="blue",xlab="year",typ="b",ylab=expression(paste(x[t]," and ", hat(m)[t]," (ppm)")),main="Monthly CO2 Values",cex=0.5)
+lines(co2$V1,m.hat.co2,col="red",lwd=2)
 
 ```
 
