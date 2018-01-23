@@ -185,3 +185,59 @@ on.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/ocean-noise.txt").
 Alteratively, you can access the data either via a link on item 15 in the list on the Data page of the course Web site or by going directly to http://faculty.washington.edu/dbp/s519/Data/ocean-noise.txt
 
 Create plots of (a) the time series {xt}, (b) its unit-lag scatter plot (i.e., xt+1 versus xt) and (c) its sample ACF out to lag 20, along with lines showing 95% confidence intervals for the ACF under the null hypothesis that {xt} is a realization of an IID noise process. Examine the null hypothesis by subjecting {xt} to the portmanteau, turning point, difference-sign, rank and runs tests. State the results of each test and your overall conclusion about the viability of the IID noise hypothesis. How do these formal tests compare with the informal test given in your plot of the sample ACF? (The 4th set of R code on the course Web site has code used to compute the five tests for the examples considered in the course overheads.)
+
+### (a) Ocean noise time series
+
+```{r,echo=TRUE,include=TRUE}
+onoise <- read.table("http://faculty.washington.edu/dbp/s519/Data/ocean-noise.txt")
+
+onoise$t <- 1:128
+str(onoise)
+### define function to do filtering ...
+
+
+
+plot(onoise$t,onoise$V1,col="blue",xlab="Second",typ="l",
+     ylab=expression(x[t]),main=expression(paste("Ocean ",
+                                                 " Ambient noise /s")))
+
+```
+### (b) Ocean noise unit-lag scatter 
+
+#### Part i
+```{r,echo=TRUE,include=TRUE}
+onoise.reg <- lm(onoise$V1 ~ onoise$t)
+
+N.onoise <- length(onoise$t)
+
+
+plot(onoise$t,onoise$V1 ,col="blue",xlab="year",typ="b",ylab=expression(x[t]),main="Ocen  floor ambient noise",cex=0.5)
+lines(onoise$t,fitted(onoise.reg),col="red")
+
+
+
+```
+
+
+#### Part ii
+
+```{r,echo=TRUE,include=TRUE}
+
+
+plot(resid(onoise.reg)[-N.onoise],resid(onoise.reg)[-1],col="blue",xlab=expression(r[t]),typ="p",ylab=expression(r[t+1]),main=expression(paste("Unit Lag Scatter Plot of Residuals {", r[t],"}")),cex=0.5)
+
+
+```
+
+### (c) its sample ACF out to lag 20, along with lines showing 95% confidence intervals for the ACF under the null hypothesis that {xt} is a realization of an IID noise process
+
+```{r,echo=TRUE,include=TRUE}
+
+
+onoise.reg.acf <- plot.ACFest(resid(onoise.reg), expression(paste("Sample ACF for Residuals {", r[t],"}")),20)
+hs <- 1:20
+lines(hs,onoise.reg.acf[2]^hs)
+
+
+
+```
