@@ -275,18 +275,33 @@ plot.figPortmanteau(Q.zs,quants.4.20,3,main=expression(paste("Portmanteau Tests 
 
 Dots are above the steps, so reject the null hypothesis
 
+Lets look at p-values
+
+```{r,echo=TRUE,include=TRUE}
+
+### overhead IV-14
+
+plot(4:20,1-mapply(pchisq,Q.zs,(4:20)-3),typ="p",xlab="h  (lag)",ylab="p-values",xlim=c(1,20),ylim=c(0,.5),col="blue",main=expression(paste("p-values for Portmanteau Tests of Ocean Noise {", z[t],"}")))
+lines(c(4,20),rep(0.05,2),col="red")
+
+
+
+```
+
+
+
 ### Diff sign test
 ```{r,echo=TRUE,include=TRUE}
 
 
 (results <- difference.sign.test(onoise.zs))
-results$test.sum            # 48
-length(onoise.zs)                  # 97
-results$mu                  # 48
-round(results$var,1)        #  8.2
-round(sqrt(results$var),1)  #  2.9
-results$test                #  0
-results$p.value             #  1
+results$test.sum            # 64
+length(onoise.zs)                  # 127
+results$mu                  # 63
+round(results$var,1)        #  10.7
+round(sqrt(results$var),1)  #  3.3
+results$test                #  0.30
+results$p.value             #  .7594629
 
 ### overhead IV-21
 
@@ -296,4 +311,75 @@ points((onoise$t[c(-1,-2)])[gg],(onoise.zs[-1])[gg],pch=16,col="red",cex=0.5)
 
 ```
 
+Diff test, p-value is .7594629(at alpha - 0.05), so we fail to reject the null hypothesis
 
+### Turning point test
+
+```{r,echo=TRUE,include=TRUE}
+
+
+
+(results <- turning.point.test(onoise.zs))
+results$test.sum            # 72
+length(onoise.zs)                  # 127
+round(results$mu,1)         # 83.3
+round(results$var,1)        # 22.3
+round(sqrt(results$var),1)  #  4.7
+round(results$test,2)       #  2.40
+round(results$p.value,2)    #  0.016
+
+### overhead IV-18
+
+plot(onoise$t[-1],onoise.zs,col="blue",xlab="year",typ="b",ylab=expression(z[t]),main=expression(paste("AR(1) Residuals ", z[t] == r[t]-hat(phi)*r[t-1])),cex=0.5)
+onoise.t.shortened <- onoise$t[-c(1,2,length(onoise.zs))]
+y <- embed(onoise.zs,3)
+gg <- (y[,2] > y[,1] & y[,2] > y[,3]) | (y[,2] < y[,1] & y[,2] < y[,3])
+points(onoise.t.shortened[gg],(y[,2])[gg],pch=16,col="red",cex=0.5)
+
+```
+
+Number of turning points - 72. p-value = 0.016, so we reject the null hypothesis(alpha = 0.05).
+
+### Rank Test
+
+```{r,echo=TRUE,include=TRUE}
+
+(results <- rank.test(onoise.zs))
+results$P                   #  4017
+length(onoise.zs)                  #    127
+results$mu                  #  4000.5
+round(results$var,1)        # 57562.75
+round(results$sd,1)         #   239.9224
+round(results$test.stat,2)  #   0.06877224
+round(results$p.value,2)    #   0.9451709
+
+
+```
+P-value - 0.94, so we fail to reject our null hypothesis.
+
+### Runs test
+
+```{r,echo=TRUE,include=TRUE}
+
+(results <- runs.test(onoise.zs))
+results$n.runs              # 66
+results$n.pos               # 62
+results$n.neg               # 65
+round(results$mu,1)         # 64.46457
+round(results$var,1)        # 31.46259
+round(results$sd,1)         #   5.609153
+round(results$test.stat,1)  #  0.2737371
+round(results$p.value,3)    #  0.7842867
+
+```
+
+P-value - 0.78, so we fail to reject our null hypothesis.
+
+* Summary of IID Tests
+
+    - Informal test for IID likely(null true), as handful are outside 95%CI
+    - portmanteau test: reject at level alpha =0.05 for h = 4 thru 20 
+    - turning point test: reject null (p-value is 0.016)
+    - difference-sign test: fail to reject (p-value is .75)
+    - rank test: fail to reject (p-value is 0.94)
+    - runs test: fail to reject (p-value is 0.78)
