@@ -80,11 +80,14 @@ co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt
 
 m.hat.co2 <- filter.with.padding(co2$V2,c(1/24,rep(1/12,11),1/24))
 
-plot(co2$V1,co2$V2,col="blue",xlab="year",typ="b",ylab=expression(paste(x[t]," and ", hat(m)[t]," (ppm)")),main="Monthly CO2 Values",cex=0.5)
+plot(co2$V1,co2$V2,col="blue",xlab="year",typ="b",
+     ylab=expression(paste(x[t]," and ", hat(m)[t]," (ppm)")),main="Monthly CO2 Values",cex=0.5)
 lines(co2$V1,m.hat.co2,col="red",lwd=2)
 
 ```
 ### III–87
+
+Removing the trend component and plotting.
 
 ```{r,echo=TRUE,include=TRUE}
 
@@ -97,6 +100,8 @@ points(co2$V1[seq(8,696,12)],co2.u[seq(8,696,12)],pch=16,col="red",cex=0.6)
 
 ```
 ### III–89
+
+Extracting for one year to show the seasonal pattern.
 
 ```{r,echo=TRUE,include=TRUE}
 
@@ -144,12 +149,12 @@ plot(co2$V1,resid(co2.d.reg),col="blue",xlab="year",typ="b",
 ### III–96
 
 ** Fails null hypothesis 
-** Any lag, it is correlated
+** Plotting the residuals and showing the 95%CIs
 
 ```{r,echo=TRUE,include=TRUE}
 
 phi <- plot.ACFest(resid(co2.d.reg), 
-                   expression(paste("Sample ACF for {", r[t],"}")))[2]
+        expression(paste("Sample ACF for {", r[t],"}")))[2]
 
 ```
 
@@ -157,19 +162,22 @@ phi <- plot.ACFest(resid(co2.d.reg),
 
 ### III–97 
 
+Testing whether the resultant is a AR(1) model.
+
 ```{r,echo=TRUE,include=TRUE}
 
 co2.z <- resid(co2.d.reg)[-1] - phi*resid(co2.d.reg)[-length(resid(co2.d.reg))]
 
 plot(co2$V1[-1],co2.z ,col="blue",xlab="year",
      typ="b",ylab=expression(paste(z[t]==r[t]-hat(phi)*r[t-1]," (thousands)")),
-     main=expression(paste("Residuals ",z[t]==r[t]-hat(phi)*r[t-1]," from Fitted AR(1) Model")),
+     main=expression(paste("Residuals ",
+       z[t]==r[t]-hat(phi)*r[t-1]," from Fitted AR(1) Model")),
      cex=0.5)
 
 ```
 ### III–98
 
-ACF for residuals from the fitted AR(1) model
+ACF for residuals from the fitted AR(1) model, very good, but two exceptions(lag 1 more pronounced)
 
 ```{r,echo=TRUE,include=TRUE}
 
@@ -211,7 +219,8 @@ onoise.reg <- lm(onoise$V1 ~ onoise$t)
 N.onoise <- length(onoise$t)
 
 
-plot(onoise$t,onoise$V1 ,col="blue",xlab="year",typ="b",ylab=expression(x[t]),main="Ocean  floor ambient noise",cex=0.5)
+plot(onoise$t,onoise$V1 ,col="blue",xlab="year",
+     typ="b",ylab=expression(x[t]),main="Ocean  floor ambient noise",cex=0.5)
 lines(onoise$t,fitted(onoise.reg),col="red")
 
 
@@ -221,10 +230,26 @@ lines(onoise$t,fitted(onoise.reg),col="red")
 
 #### Part ii
 
+
 ```{r,echo=TRUE,include=TRUE}
 
 
-plot(resid(onoise.reg)[-N.onoise],resid(onoise.reg)[-1],col="blue",xlab=expression(r[t]),typ="p",ylab=expression(r[t+1]),main=expression(paste("Unit Lag Scatter Plot of Residuals {", r[t],"}")),cex=0.5)
+plot(onoise$V1[-N.onoise],onoise$V1[-1],col="blue",
+     xlab=expression(x[t]),typ="p",
+     ylab=expression(x[t+1]),
+     main=expression(paste("Unit Lag Scatter Plot of Ocean noise {", x[t],"}")),cex=0.5)
+
+
+```
+
+#### Alternate way to look at it by using residuals
+```{r,echo=TRUE,include=TRUE}
+
+
+plot(resid(onoise.reg)[-N.onoise],resid(onoise.reg)[-1],
+     col="blue",xlab=expression(r[t]),typ="p",
+     ylab=expression(r[t+1]),
+     main=expression(paste("Unit Lag Scatter Plot of Residuals {", r[t],"}")),cex=0.5)
 
 
 ```
@@ -234,7 +259,8 @@ plot(resid(onoise.reg)[-N.onoise],resid(onoise.reg)[-1],col="blue",xlab=expressi
 ```{r,echo=TRUE,include=TRUE}
 
 
-onoise.reg.acf <- plot.ACFest(resid(onoise.reg), expression(paste("Sample ACF for Residuals {", r[t],"}")),20)
+onoise.reg.acf <- plot.ACFest(resid(onoise.reg), 
+                   expression(paste("Sample ACF for Residuals {", r[t],"}")),20)
 hs <- 1:20
 lines(hs,onoise.reg.acf[2]^hs)
 
@@ -253,12 +279,13 @@ plot.figPortmanteau <- function(Qs, quants, p=0, main=NULL)
     hs <- (p+1):(N.Qs+p)
     plot(hs,quants,typ="n",xlab="h  (lag)",ylab=expression(paste(Q[LB],"(h) and 95% quantile")),xlim=c(0,N.Qs+p),ylim=c(0,max(c(Qs,quants))),main=main)
     points(hs,Qs,pch=16,col="blue")
-    segments(seq(p+0.75,by=1,length=N.Qs),quants,seq(p+1.25,by=1,length=N.Qs),quants,lwd=2,col="red")
+    segments(seq(p+0.75,by=1,length=N.Qs),quants,seq(p+1.25,by=1,
+     length=N.Qs),quants,lwd=2,col="red")
 }
 
 #Housekeeping
 onoise.reg.acf2 <- acf(resid(onoise.reg), lag.max=420, plot=FALSE)$acf
-round(phi <- onoise.reg.acf2[2],3)  # 0.762
+round(phi <- onoise.reg.acf2[2],3)  # -0.012
 onoise.zs <- resid(onoise.reg)[-1] - phi*resid(onoise.reg)[-N.onoise]
 
 ### overhead IV-13
@@ -268,7 +295,8 @@ Q.zs <- sapply(4:20,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(o
 quants.4.20 <- sapply(4:20,function(dof) {qchisq(0.05,dof,lower=FALSE)})
 quants.4.20 <- sapply((4:20)-3,function(dof) {qchisq(0.05,dof,lower=FALSE)})
 
-plot.figPortmanteau(Q.zs,quants.4.20,3,main=expression(paste("Portmanteau Tests of Ocean noise {", z[t],"}")))
+plot.figPortmanteau(Q.zs,quants.4.20,3,
+main=expression(paste("Portmanteau Tests of Ocean noise {", z[t],"}")))
 
 
 ```
@@ -281,7 +309,8 @@ Lets look at p-values
 
 ### overhead IV-14
 
-plot(4:20,1-mapply(pchisq,Q.zs,(4:20)-3),typ="p",xlab="h  (lag)",ylab="p-values",xlim=c(1,20),ylim=c(0,.5),col="blue",main=expression(paste("p-values for Portmanteau Tests of Ocean Noise {", z[t],"}")))
+plot(4:20,1-mapply(pchisq,Q.zs,(4:20)-3),typ="p",xlab="h  (lag)",ylab="p-values",xlim=c(1,20),ylim=c(0,.5),col="blue",
+     main=expression(paste("p-values for Portmanteau Tests of Ocean Noise {", z[t],"}")))
 lines(c(4,20),rep(0.05,2),col="red")
 
 
@@ -305,7 +334,9 @@ results$p.value             #  .7594629
 
 ### overhead IV-21
 
-plot(onoise$t[-1],onoise.zs,col="blue",xlab="year",typ="b",ylab=expression(z[t]),main=expression(paste("AR(1) Residuals ", z[t] == r[t]-hat(phi)*r[t-1])),cex=0.5)
+plot(onoise$t[-1],onoise.zs,col="blue",xlab="year",typ="b",
+     ylab=expression(z[t]),main=expression(paste("AR(1) Residuals ",
+      z[t] == r[t]-hat(phi)*r[t-1])),cex=0.5)
 gg <- diff(onoise.zs) > 0
 points((onoise$t[c(-1,-2)])[gg],(onoise.zs[-1])[gg],pch=16,col="red",cex=0.5)
 
@@ -330,7 +361,9 @@ round(results$p.value,2)    #  0.016
 
 ### overhead IV-18
 
-plot(onoise$t[-1],onoise.zs,col="blue",xlab="year",typ="b",ylab=expression(z[t]),main=expression(paste("AR(1) Residuals ", z[t] == r[t]-hat(phi)*r[t-1])),cex=0.5)
+plot(onoise$t[-1],onoise.zs,col="blue",xlab="year",typ="b",
+     ylab=expression(z[t]),main=expression(paste("AR(1) Residuals ",
+      z[t] == r[t]-hat(phi)*r[t-1])),cex=0.5)
 onoise.t.shortened <- onoise$t[-c(1,2,length(onoise.zs))]
 y <- embed(onoise.zs,3)
 gg <- (y[,2] > y[,1] & y[,2] > y[,3]) | (y[,2] < y[,1] & y[,2] < y[,3])
@@ -375,11 +408,20 @@ round(results$p.value,3)    #  0.7842867
 
 P-value - 0.78, so we fail to reject our null hypothesis.
 
-* Summary of IID Tests
 
-    - Informal test for IID likely(null true), as handful are outside 95%CI
-    - portmanteau test: reject at level alpha =0.05 for h = 4 thru 20 
+
+## Summary of IID Tests ({xt} is a realization of an IID noise process)
+
+    - Informal test based on sample ACF : IID hypothesis unlikely(reject null hypothesis),
+      as handful are outside 95%CI
+    - portmanteau test: reject null (with alpha =0.05) for h = 4 thru 20 
     - turning point test: reject null (p-value is 0.016)
     - difference-sign test: fail to reject (p-value is .75)
     - rank test: fail to reject (p-value is 0.94)
     - runs test: fail to reject (p-value is 0.78)
+    
+## Conclusion
+
+    - There is a tie, if informal ACF test is included, but I feel the sample size is 
+      constrained to make a more informed decision. I would lean towards rejecting the 
+      hypothesis that it is IID noise based on Portmanteau & Turning point test .
