@@ -1,0 +1,428 @@
+---
+title: "Homework-3 - Stats 519 - Revised"
+author: "Aji John"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+#Problem 8
+
+Problem 8 (8 points). Perform an analysis of the atmospheric carbon dioxide (CO2) time series from Mauna Loa, Hawaii, along the same lines as the analysis of the accidental deaths (AD) series starting with lecture overhead III–82 (the 3rd set of R code on the course Web site has the code used to analyze the AD series). You can read the CO2 data directly into R using co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt").
+
+Please feel free to alter choices that were made in the analysis of the AD series if you deem them to be inappropriate for your analysis of the CO2 series. Create and turn in plots that correspond to overheads III–85, III–87, III–89 (but just show the seasonal pattern for a single year, as is done in III-107), III–92, III–94, III–96, III–97 andIII–98, along with brief descriptions of the steps you took in your analysis (please also turn in the code you used to do your analysis). Finally, state briefly your conclusions about how well the simple modeling approach worked for the CO2 series.
+
+### 
+
+
+```{r,echo=TRUE,include=TRUE}
+co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt")
+str(co2)
+### define function to do filtering ...
+
+filter.with.padding <- function(x,the.filter,iter=1)
+{
+    q <- (length(the.filter)-1)/2
+    n <- length(x)
+    w <- stats::filter(c(rep(x[1],q),x,rep(x[n],q)),the.filter)[(q+1):(q+n)]
+    if(iter > 1) for(i in 2:iter) w <- filter(c(rep(w[1],q),w,rep(w[n],q)),the.filter)[(q+1):(q+n)]
+    return(w)
+}
+
+plot.ACFest <- function(ts, main=NULL, n.lags=40)
+{
+    ts.acf <- acf(ts, lag.max=n.lags, plot=FALSE)
+    n.ts <- length(ts)
+    xs <- 1:n.lags
+    ys <- ts.acf$acf[2:(n.lags+1)]
+    plot(xs,ys,typ="h",xlab="h  (lag)",ylab="ACF",ylim=c(-1,1),col="blue",main=main)
+    points(xs,ys,col="red",cex=0.5)
+    xs <- 1:n.lags
+    xs[1] <- xs[1] - 0.25
+    xs[n.lags] <- xs[n.lags] + 0.25
+    lines(xs,1.96*sqrt(n.ts-xs)/n.ts,col="magenta",lty="dashed")
+    lines(xs,-1.96*sqrt(n.ts-xs)/n.ts,col="magenta",lty="dashed")
+    abline(h=0,lty="dashed")
+    CI.hw <- 1.96/sqrt(n.ts)
+    lines(c(0.75,n.lags+0.25),rep(CI.hw,2),col="blue",lty="dashed")
+    lines(c(0.75,n.lags+0.25),rep(-CI.hw,2),col="blue",lty="dashed")
+    return(ts.acf$acf)
+}
+### overhead III-2
+
+plot(co2$V1,co2$V2,col="blue",xlab="year",typ="l",
+     ylab=expression(x[t]),main=expression(paste("2nd Example: ", CO[2],
+                                                 " Series from Mauna Loa, Hawaii")))
+
+```
+
+### III–85 - Seasonal component taken out
+#### Use a smoothing filter to take the seasonal component out
+
+```{r,echo=FALSE,include=FALSE}
+co2$year <- substring(as.character(co2$V1),1,4)
+
+co2%>% group_by(year) %>% summarise(months=n())
+
+```
+
+Take 5 points before the center, and 5 after, and penalize the extremes.
+### III–85
+
+```{r,echo=TRUE,include=TRUE}
+co2 <- read.table("http://faculty.washington.edu/dbp/s519/Data/co2-1958-2017.txt")
+
+m.hat.co2 <- filter.with.padding(co2$V2,c(1/24,rep(1/12,11),1/24))
+
+plot(co2$V1,co2$V2,col="blue",xlab="year",typ="b",
+     ylab=expression(paste(x[t]," and ", hat(m)[t]," (ppm)")),main="Monthly CO2 Values",cex=0.5)
+lines(co2$V1,m.hat.co2,col="red",lwd=2)
+
+```
+### III–87
+
+Removing the trend component and plotting.
+
+```{r,echo=TRUE,include=TRUE}
+
+co2.u <- co2$V2 - m.hat.co2
+
+plot(co2$V1,co2.u,col="blue",xlab="year",typ="b",ylab=expression(paste(u[t]==x[t]-hat(m)[t]," (ppm)")),main="Preliminary Detrending of CO2 Series",cex=0.5)
+points(co2$V1[seq(8,696,12)],co2.u[seq(8,696,12)],pch=16,col="red",cex=0.6)
+
+
+
+```
+### III–89
+
+Extracting for one year to show the seasonal pattern.
+
+```{r,echo=TRUE,include=TRUE}
+
+
+co2.w.j <- rowMeans(matrix(co2.u,nrow=12))
+
+plot(1:12,co2.w.j- mean(co2.w.j),col="blue",xlab="year",
+     typ="b",ylab=expression(hat(s)[j]),
+     main=expression(paste("CO2 Step 3: Form Estimate {",hat(s)[j],"} of Seasonal Pattern")),
+     ylim=c(-9,9),cex=0.5)
+
+
+```
+
+###  III–92 (Deasonalized data with trend estimate)
+
+```{r,echo=TRUE,include=TRUE}
+
+#get all the years(columns), rows(minths)
+#average all the jan, feb... dec
+co2.w.j <- rowMeans(matrix(co2.u,nrow=12))
+co2.s.j.hat <- rep(co2.w.j - mean(co2.w.j),59)
+co2.d <- co2$V2 - co2.s.j.hat
+
+co2.d.reg <- lm(co2.d ~ co2$V1 + I(co2$V1^2))
+
+plot(co2$V1,co2.d,col="blue",xlab="year",typ="b",
+     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (thousands)")),
+     main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),
+     cex=0.5)
+lines(co2$V1,fitted(co2.d.reg),col="purple",lwd=2)
+
+```
+### III–94 Residuals removed
+
+```{r,echo=TRUE,include=TRUE}
+
+plot(co2$V1,resid(co2.d.reg),col="blue",xlab="year",typ="b",
+     ylab=expression(paste(r[t] == x[t] - hat(m)[t] - hat(s)[t]," (ppm)")),
+     main=expression(paste("Residuals {",r[t],"} from Removal of {", hat(m)[t],"} and {",hat(s)[t],"}")),
+     cex=0.5)
+
+```
+
+### III–96
+
+** Fails null hypothesis 
+** Plotting the residuals and showing the 95%CIs
+
+```{r,echo=TRUE,include=TRUE}
+
+phi <- plot.ACFest(resid(co2.d.reg), 
+        expression(paste("Sample ACF for {", r[t],"}")))[2]
+
+```
+
+
+
+### III–97 
+
+Testing whether the resultant is a AR(1) model.
+
+```{r,echo=TRUE,include=TRUE}
+
+co2.z <- resid(co2.d.reg)[-1] - phi*resid(co2.d.reg)[-length(resid(co2.d.reg))]
+
+plot(co2$V1[-1],co2.z ,col="blue",xlab="year",
+     typ="b",ylab=expression(paste(z[t]==r[t]-hat(phi)*r[t-1]," (thousands)")),
+     main=expression(paste("Residuals ",
+       z[t]==r[t]-hat(phi)*r[t-1]," from Fitted AR(1) Model")),
+     cex=0.5)
+
+```
+### III–98
+
+ACF for residuals from the fitted AR(1) model, very good, but two exceptions(lag 1 more pronounced)
+
+```{r,echo=TRUE,include=TRUE}
+
+plot.ACFest(co2.z, expression(paste("Sample ACF for {", z[t],"}")))[2]
+
+```
+
+#Problem 9
+
+Problem 9 (8 points). Here we consider a time series {xt} measuring ambient noise in the ocean from one second to the next. You can read this series directly into R using
+on.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/ocean-noise.txt").
+
+Alteratively, you can access the data either via a link on item 15 in the list on the Data page of the course Web site or by going directly to http://faculty.washington.edu/dbp/s519/Data/ocean-noise.txt
+
+Create plots of (a) the time series {xt}, (b) its unit-lag scatter plot (i.e., xt+1 versus xt) and (c) its sample ACF out to lag 20, along with lines showing 95% confidence intervals for the ACF under the null hypothesis that {xt} is a realization of an IID noise process. Examine the null hypothesis by subjecting {xt} to the portmanteau, turning point, difference-sign, rank and runs tests. State the results of each test and your overall conclusion about the viability of the IID noise hypothesis. How do these formal tests compare with the informal test given in your plot of the sample ACF? (The 4th set of R code on the course Web site has code used to compute the five tests for the examples considered in the course overheads.)
+
+### (a) Ocean noise time series
+
+```{r,echo=TRUE,include=TRUE}
+onoise <- read.table("http://faculty.washington.edu/dbp/s519/Data/ocean-noise.txt")
+
+onoise$t <- 1:128
+str(onoise)
+### define function to do filtering ...
+
+
+
+plot(onoise$t,onoise$V1,col="blue",xlab="Second",typ="l",
+     ylab=expression(x[t]),main=expression(paste("Ocean ",
+                                                 " Ambient noise /s")))
+
+```
+### (b) Ocean noise unit-lag scatter 
+
+
+
+#### Part unit log scatter
+
+
+```{r,echo=TRUE,include=TRUE}
+
+N.onoise <- length(onoise$t)
+
+plot(onoise$V1[-N.onoise],onoise$V1[-1],col="blue",
+     xlab=expression(x[t]),typ="p",
+     ylab=expression(x[t+1]),
+     main=expression(paste("Unit Lag Scatter Plot of Ocean noise {", x[t],"}")),cex=0.5)
+
+
+```
+
+#### Alternate way to look at it by using residuals
+```{r,echo=TRUE,include=TRUE}
+
+onoise.reg <- lm(onoise$V1 ~ onoise$t)
+plot(resid(onoise.reg)[-N.onoise],resid(onoise.reg)[-1],
+     col="blue",xlab=expression(r[t]),typ="p",
+     ylab=expression(r[t+1]),
+     main=expression(paste("Unit Lag Scatter Plot of Residuals {", r[t],"}")),cex=0.5)
+
+
+```
+
+### (c) its sample ACF out to lag 20, along with lines showing 95% confidence intervals for the ACF under the null hypothesis that {xt} is a realization of an IID noise process
+
+#### ne unusable
+```{r,echo=TRUE,include=TRUE}
+
+
+onoise.reg.acfr <- plot.ACFest(onoise$V1, 
+                   expression(paste("Sample ACF for Residuals {", r[t],"}")),20)
+hs <- 1:20
+lines(hs,onoise.reg.acfr[2]^hs)
+
+```
+
+#### old unusable
+```{r,echo=TRUE,include=TRUE}
+
+
+onoise.reg.acf <- plot.ACFest(resid(onoise.reg), 
+                   expression(paste("Sample ACF for Residuals {", r[t],"}")),20)
+hs <- 1:20
+lines(hs,onoise.reg.acf[2]^hs)
+
+```
+
+Few sticklers ar lag 15, 10 ,5,, so would reject the null hypothesis by looking at the ACF plot.
+
+Lets continue with portmanteau test.
+
+```{r,echo=TRUE,include=TRUE}
+
+source("http://faculty.washington.edu/dbp/s519/R-code/diagnostic-tests.R")
+plot.figPortmanteau <- function(Qs, quants, p=0, main=NULL)
+{
+    N.Qs <- length(Qs)
+    hs <- (p+1):(N.Qs+p)
+    plot(hs,quants,typ="n",xlab="h  (lag)",ylab=expression(paste(Q[LB],"(h) and 95% quantile")),xlim=c(0,N.Qs+p),ylim=c(0,max(c(Qs,quants))),main=main)
+    points(hs,Qs,pch=16,col="blue")
+    segments(seq(p+0.75,by=1,length=N.Qs),quants,seq(p+1.25,by=1,
+     length=N.Qs),quants,lwd=2,col="red")
+}
+
+#Housekeeping
+onoise.reg.acff <- acf(onoise$V1, lag.max=20, plot=FALSE)$acf
+round(phi <- onoise.reg.acff[2],3)  # -0.006 (was -0.012)
+onoise.zs <- onoise$V1[-1] - phi*onoise$V1[-N.onoise]
+
+### overhead IV-13
+
+onoise.acf.zs <- acf(onoise.zs, lag.max=20, plot=FALSE)$acf[-1]
+Q.zs <- sapply(1:20,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(onoise.zs))})
+quants.1.20 <- sapply(1:20,function(dof) {qchisq(0.05,dof,lower=FALSE)})
+quants.1.20 <- sapply((1:20)-3,function(dof) {qchisq(0.05,dof,lower=FALSE)})
+
+plot.figPortmanteau(Q.zs,quants.4.20,3,
+main=expression(paste("Portmanteau Tests of Ocean noise {", z[t],"}")))
+
+
+```
+
+Dots are above the steps, so reject the null hypothesis
+
+Lets look at p-values
+
+```{r,echo=TRUE,include=TRUE}
+
+### overhead IV-14
+
+plot(4:20,1-mapply(pchisq,Q.zs,(4:20)-3),typ="p",xlab="h  (lag)",ylab="p-values",xlim=c(1,20),ylim=c(0,.5),col="blue",
+     main=expression(paste("p-values for Portmanteau Tests of Ocean Noise {", z[t],"}")))
+lines(c(4,20),rep(0.05,2),col="red")
+
+
+
+```
+
+
+
+### Diff sign test
+```{r,echo=TRUE,include=TRUE}
+
+
+(results <- difference.sign.test(onoise.zs))
+results$test.sum            # 64
+length(onoise.zs)                  # 127
+results$mu                  # 63
+round(results$var,1)        #  10.7
+round(sqrt(results$var),1)  #  3.3
+results$test                #  0.30
+results$p.value             #  .7594629
+
+### overhead IV-21
+
+plot(onoise$t[-1],onoise.zs,col="blue",xlab="year",typ="b",
+     ylab=expression(z[t]),main=expression(paste("AR(1) Residuals ",
+      z[t] == r[t]-hat(phi)*r[t-1])),cex=0.5)
+gg <- diff(onoise.zs) > 0
+points((onoise$t[c(-1,-2)])[gg],(onoise.zs[-1])[gg],pch=16,col="red",cex=0.5)
+
+```
+
+Diff test, p-value is .7594629(at alpha - 0.05), so we fail to reject the null hypothesis
+
+### Turning point test
+
+```{r,echo=TRUE,include=TRUE}
+
+
+
+(results <- turning.point.test(onoise.zs))
+results$test.sum            # 72
+length(onoise.zs)                  # 127
+round(results$mu,1)         # 83.3
+round(results$var,1)        # 22.3
+round(sqrt(results$var),1)  #  4.7
+round(results$test,2)       #  2.40
+round(results$p.value,2)    # 0.02 (was  0.016
+
+### overhead IV-18
+
+plot(onoise$t[-1],onoise.zs,col="blue",xlab="year",typ="b",
+     ylab=expression(z[t]),main=expression(paste("AR(1) Residuals ",
+      z[t] == r[t]-hat(phi)*r[t-1])),cex=0.5)
+onoise.t.shortened <- onoise$t[-c(1,2,length(onoise.zs))]
+y <- embed(onoise.zs,3)
+gg <- (y[,2] > y[,1] & y[,2] > y[,3]) | (y[,2] < y[,1] & y[,2] < y[,3])
+points(onoise.t.shortened[gg],(y[,2])[gg],pch=16,col="red",cex=0.5)
+
+```
+
+Number of turning points - 72. p-value = 0.016, so we reject the null hypothesis(alpha = 0.05).
+
+### Rank Test
+
+```{r,echo=TRUE,include=TRUE}
+
+(results <- rank.test(onoise.zs))
+results$P                   #  4017
+length(onoise.zs)                  #    127
+results$mu                  #  4000.5
+round(results$var,1)        # 57562.75
+round(results$sd,1)         #   239.9224
+round(results$test.stat,2)  #   0.72 ( was 0.06877224
+round(results$p.value,2)    #   0.47 ( was 0.9451709
+
+
+```
+P-value - 0.47, so we fail to reject our null hypothesis.
+
+### Runs test
+
+```{r,echo=TRUE,include=TRUE}
+
+(results <- runs.test(onoise$V1))
+results$n.runs              # 66
+results$n.pos               # 59(62
+results$n.neg               # 69 (65
+round(results$mu,1)         # 64.6
+round(results$var,1)        # 31.4
+round(results$sd,1)         #   5.6
+round(results$test.stat,1)  # 0.2 (0.2483314) ( old  0.2737371
+round(results$p.value,3)    #  0.80 ( old 0.7842867
+
+```
+
+P-value - 0.80, so we fail to reject our null hypothesis.
+
+
+
+## Summary of IID Tests ({xt} is a realization of an IID noise process)
+
+    - Informal test based on sample ACF : IID hypothesis unlikely(reject null hypothesis),
+      as handful are outside 95%CI
+    - portmanteau test: reject null (with alpha =0.05) for h = 4 thru 20 
+    - turning point test: reject null (p-value is 0.016)
+    - difference-sign test: fail to reject (p-value is .75)
+    - rank test: fail to reject (p-value is 0.94)
+    - runs test: fail to reject (p-value is 0.78)
+    
+## Conclusion
+
+    - There is a tie, if informal ACF test is included, but I feel the sample size is 
+      constrained to make a more informed decision. I would lean towards rejecting the 
+      hypothesis that it is IID noise based on Portmanteau & Turning point test .
+
+### Apparently bad choice of words for conclusion. I believe you could use a voting of tests. 
