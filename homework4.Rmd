@@ -1,0 +1,53 @@
+---
+title: "Homework 4"
+Author: "Aji John"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 12 b
+
+
+
+```{r }
+phis <- seq(-0.99,0.99,0.01)
+ratiovar <- (1+ phis)/(100*(1-phis))
+
+plot(phis,ratiovar,xlab = "phi", ylab = "ratio var (xbar/xt")
+```
+
+## Problem 12 c
+
+
+```{r}
+
+n <- seq(1,1000,1)
+phi1 <- -0.9
+ratiovar1 <- (1+ phi1)/(n*(1-phi1))
+
+plot(n,ratiovar1,xlab = "n", ylab = "ratio var (xbar/xt) for phi -0.9")
+
+```
+
+```{r}
+
+n <- seq(1,1000,1)
+phi2 <- 0
+ratiovar2 <- (1+ phi2)/(n*(1-phi2))
+
+plot(n,ratiovar2,xlab = "n", ylab = "ratio var (xbar/xt) for phi 0")
+
+```
+
+```{r}
+
+n <- seq(1,1000,1)
+phi3 <- 0.9
+ratiovar3 <- (1+ phi3)/(n*(1-phi3))
+
+plot(n,ratiovar3,xlab = "n", ylab = "ratio var (xbar/xt) for phi 0.9")
+
+```
