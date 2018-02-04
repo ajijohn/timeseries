@@ -1,0 +1,81 @@
+<style>
+.footer {
+    color: black;
+    background: #ffffff;
+    position: fixed;
+    top: 90%;
+    text-align:center;
+    font-family: 'EB Garamond', 'serif';
+    width:100%;
+}
+</style>
+<div class="footer">UW Biology/Buckley Lab</div>
+Dicing climate data
+========================================================
+author: Aji John
+date: 
+autosize: true
+
+Climate
+========================================================
+
+```{r, echo=FALSE,include=FALSE}
+library(tidyverse)
+```
+
+</br>
+
+### The term originally denoted a zone of the earth between two lines of latitude, then any region of the earth, and later, a region considered with reference to its atmospheric conditions. (Apple dictionary)
+
+One climate variable - Temperature
+========================================================
+
+### Important as it directly relates to productivity in plants/animals. 
+
+```{r, echo=FALSE,include=FALSE}
+climatedata <- read.csv("data/AB08-A2_hourly.csv")
+climatedata$dt <- strptime(climatedata$DATE, format = "%Y-%m-%d %H:%M:%S")
+climatedata$dt_txn <- as.POSIXct(climatedata$DATE,ormat = "%Y-%m-%d %H:%M:%S")
+# Add month column
+# Add day column
+# Add hour column
+climatedata$month <-format(climatedata$dt_txn,"%m")
+climatedata$day <- format(climatedata$dt_txn,"%d")
+climatedata$hour <- format(climatedata$dt_txn,"%H")
+```
+
+How is it diced ? Temperature
+========================================================
+
+<br>
+
+### How is it used ?
+
+<br>
+
+Parameter     | Context
+------------- | -------------
+Minimum       | Day/Month/Season/Year
+Maximum       | Day/Month/Season/Year
+Diurnal       | Daily (Max - min)
+
+<br>
+<br>
+
+#### A study might use combination of these parameters, but could get complicated by adding other environmental attributes. 
+
+Case study - Mt Rainier site
+========================================================
+
+
+```{r, echo=FALSE,fig=TRUE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>% ggplot(aes(dt_txn,series_xts)) + geom_point() +  theme_minimal() + labs(x="Year",y="Temperature (deg C)", title="Site AB08")
+```
+
+<br>
+
+Aggregations of Temperature
+========================================================
+
