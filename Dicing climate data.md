@@ -9,7 +9,7 @@
     width:100%;
 }
 </style>
-<div class="footer">UW Biology/Buckley Lab</div>
+<!-- regular html comment <div class="footer">UW Biology/Buckley Lab</div> --> 
 Dicing climate data
 ========================================================
 author: Aji John
@@ -60,6 +60,58 @@ Case study - Mt Rainier site
 
 <br>
 
-Aggregations of Temperature
+Aggregations - Yearly mean
+========================================================
+#### Yearly Mean
+
+<img src="Dicing climate data-figure/unnamed-chunk-4-1.png" title="plot of chunk unnamed-chunk-4" alt="plot of chunk unnamed-chunk-4" width="60%" style="display: block; margin: auto;" />
+
+Aggregations
+========================================================
+#### Monthly Minimum
+
+<img src="Dicing climate data-figure/unnamed-chunk-5-1.png" title="plot of chunk unnamed-chunk-5" alt="plot of chunk unnamed-chunk-5" width="60%" style="display: block; margin: auto;" />
+Aggregations
+========================================================
+#### Monthly maximum
+
+<img src="Dicing climate data-figure/unnamed-chunk-6-1.png" title="plot of chunk unnamed-chunk-6" alt="plot of chunk unnamed-chunk-6" width="60%" style="display: block; margin: auto;" />
+
+Aggregations
+========================================================
+#### Monthly mean
+
+<img src="Dicing climate data-figure/unnamed-chunk-7-1.png" title="plot of chunk unnamed-chunk-7" alt="plot of chunk unnamed-chunk-7" width="60%" style="display: block; margin: auto;" />
+
+Diurnal 
+========================================================
+#### DJF - Winter - Across all years by month
+
+<img src="Dicing climate data-figure/unnamed-chunk-8-1.png" title="plot of chunk unnamed-chunk-8" alt="plot of chunk unnamed-chunk-8" width="60%" style="display: block; margin: auto;" />
+
+Diurnal 
+========================================================
+#### DJF - Winter - By year
+
+<img src="Dicing climate data-figure/unnamed-chunk-9-1.png" title="plot of chunk unnamed-chunk-9" alt="plot of chunk unnamed-chunk-9" width="60%" style="display: block; margin: auto;" />
+
+Diurnal 
+========================================================
+#### DJF - Summer - By year
+
+<img src="Dicing climate data-figure/unnamed-chunk-10-1.png" title="plot of chunk unnamed-chunk-10" alt="plot of chunk unnamed-chunk-10" width="60%" style="display: block; margin: auto;" />
+
+How is it used ? Temperature
 ========================================================
 
+<br>
+
+### How is it used ?
+
+
+
+
+<br>
+<br>
+
+#### Recorded in various ways, by daily, monthly or yearly

@@ -9,7 +9,7 @@
     width:100%;
 }
 </style>
-<div class="footer">UW Biology/Buckley Lab</div>
+<!-- regular html comment <div class="footer">UW Biology/Buckley Lab</div> --> 
 Dicing climate data
 ========================================================
 author: Aji John
@@ -42,6 +42,7 @@ climatedata$dt_txn <- as.POSIXct(climatedata$DATE,ormat = "%Y-%m-%d %H:%M:%S")
 climatedata$month <-format(climatedata$dt_txn,"%m")
 climatedata$day <- format(climatedata$dt_txn,"%d")
 climatedata$hour <- format(climatedata$dt_txn,"%H")
+climatedata$year <- substring(as.character(climatedata$DATE),1,4)
 ```
 
 How is it diced ? Temperature
@@ -76,6 +77,101 @@ climatedata %>% ggplot(aes(dt_txn,series_xts)) + geom_point() +  theme_minimal()
 
 <br>
 
-Aggregations of Temperature
+Aggregations - Yearly mean
+========================================================
+#### Yearly Mean
+
+```{r, echo=FALSE,fig=TRUE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>% filter(!is.na(series_xts) ) %>%group_by(year) %>% summarise(mean_t=mean(series_xts),rows=n()) %>% ggplot(aes(as.integer(year),mean_t)) + geom_line()  + theme_minimal() + labs(x="Year",y="Temperature (deg C)", title="Site AB08 Yearly mean temperatures")
+```
+
+Aggregations
+========================================================
+#### Monthly Minimum
+
+```{r, echo=FALSE,fig=TRUE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>% filter(!is.na(series_xts) ) %>%group_by(year,month) %>% summarise(min_t=min(series_xts),max_t= max(series_xts),mean_t=mean(series_xts),rows=n()) %>% ggplot(aes(year,min_t,group=month,color=month)) + geom_line()  + theme_minimal() + labs(x="Year",y="Temperature (deg C)", title="Site AB08 Monthly minimum temperatures")
+```
+Aggregations
+========================================================
+#### Monthly maximum
+
+```{r, echo=FALSE,fig=TRUE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>% filter(!is.na(series_xts) ) %>%group_by(year,month) %>% summarise(min_t=min(series_xts),max_t= max(series_xts),mean_t=mean(series_xts),rows=n()) %>% ggplot(aes(year,max_t,group=month,color=month)) + geom_line()  + theme_minimal() + labs(x="Year",y="Temperature (deg C)", title="Site AB08 Monthly maximum temperatures")
+```
+
+Aggregations
+========================================================
+#### Monthly mean
+
+```{r, echo=FALSE,fig=TRUE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>% filter(!is.na(series_xts) ) %>%group_by(year,month) %>% summarise(min_t=min(series_xts),max_t= max(series_xts),mean_t=mean(series_xts),rows=n()) %>% ggplot(aes(year,mean_t,group=month,color=month)) + geom_line()  + theme_minimal() + labs(x="Year",y="Temperature (deg C)", title="Site AB08 Monthly mean temperatures")
+```
+
+Diurnal 
+========================================================
+#### DJF - Winter - Across all years by month
+
+```{r, echo=FALSE,fig=TRUE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>%filter(month %in% c('12','01','02')) %>% 
+ggplot(aes(hour,series_xts,group=month,color=month)) + 
+stat_smooth(se = FALSE) +  theme_minimal() +
+ggtitle("Site AB08 - DJF Hourly Temperatures")+
+xlab("Time of day") + ylab("Air Temperature")
+
+```
+
+Diurnal 
+========================================================
+#### DJF - Winter - By year
+
+```{r, echo=FALSE,fig=TRUE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>%filter(month %in% c('12','01','02')) %>% 
+ggplot(aes(hour,series_xts,group=year,color=year)) + 
+stat_smooth(se = FALSE) +  theme_minimal() +
+ggtitle("Site AB08 - DJF Hourly Temperatures")+
+xlab("Time of day") + ylab("Air Temperature")
+
+```
+
+Diurnal 
+========================================================
+#### DJF - Summer - By year
+
+```{r, echo=FALSE,fig=TRUE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>%filter(month %in% c('06','07','08')) %>% 
+ggplot(aes(hour,series_xts,group=year,color=year)) + 
+stat_smooth(se = FALSE) +  theme_minimal() +
+ggtitle("Site AB08 - JJA Hourly Temperatures")+
+xlab("Time of day") + ylab("Air Temperature")
+
+```
+
+How is it used ? Temperature
 ========================================================
 
+<br>
+
+### How is it used ?
+
+
+
+
+<br>
+<br>
+
+#### Recorded in various ways, by daily, monthly or yearly
