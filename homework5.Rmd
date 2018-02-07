@@ -133,5 +133,7 @@ for (i in 1:4){
  }
  df_cov <- rbind(df_cov,b)
 }
+ colnames(df_corr) <-  c('cor_1','cor_2','cor_3', 'cor_4')
+ colnames(df_cov) <-  c('cov_1','cov_2','cov_3', 'cov_4')
 
 ```
