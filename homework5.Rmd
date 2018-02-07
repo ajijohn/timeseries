@@ -1,0 +1,137 @@
+---
+title: "Homework 5"
+output:
+  pdf_document: default
+  html_document: default
+Author: Aji John
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 14 b
+
+
+
+```{r }
+sim.a <- function(n=100,a=-2,b=1,c=pi/4)
+{
+  Zt <- rnorm(n+2)
+  a + b*Zt[3:(n+2)] + c*Zt[1:n]
+}
+
+set.seed(42)
+tss <- sim.a()
+plot(tss,col="blue",xlab="t",typ="b", ylab=expression(x[t]))
+
+
+plot.ACVFbiasedVSunbiased <- function(ts, main=NULL,ylims=c(-2,4))
+{
+    n <- length(ts)
+    xs <- 0:(n-1)
+    ys <- acf(ts, lag.max=n-1, type="covariance", plot=FALSE)$acf
+    plot(xs,ys,typ="p",xlab="h  (lag)",ylab="ACVF",ylim=ylims,col="blue",main=main)
+    points(xs,ys*n/(n-(0:(n-1))),pch="*",col="red")
+    abline(h=0,lty="dashed")
+    abline(h=max(ys),lty="dotted")
+}
+
+### overhead VI-11
+
+plot.ACVFbiasedVSunbiased(tss,"Biased & Unbiased Sample ACVF for Xt")
+
+```
+
+## Problem 14 b
+
+
+```{r}
+
+acf.xt.ts <- acf(tss, lag.max=4, plot=TRUE)$acf
+
+
+```
+
+```{r}
+
+dup.row<-function(x,n){
+   matrix(rep(x,each=n),nrow=n)
+}
+dup.col <-function(x,n){
+   matrix(rep(x,each=n), ncol=n, byrow=TRUE)
+}
+
+```
+
+```{r}
+
+#create matrix from vectors
+M <- cbind(tss)
+#cov(M)
+
+
+
+k <- ncol(M) #number of variables
+n <- nrow(M) #number of subjects
+ 
+#create means for each column
+M_mean <- matrix(data=1, nrow=n) %*% cbind(mean(tss)) 
+ 
+#creates a difference matrix
+D <- M - M_mean
+ 
+#creates the covariance matrix
+C <- (n-1)^-1* t(D) %*% D
+```
+
+
+```{r}
+
+#create matrix from vectors
+as.vector(acf(tss, lag.max=4, plot=TRUE)$acf[2:5])
+
+acf.tss.1 <- as.vector(acf(sim.a(), lag.max=4, plot=TRUE)$acf[2:5])
+acf.tss.2 <- as.vector(acf(sim.a(), lag.max=4, plot=TRUE)$acf[2:5])
+acf.tss.3 <- as.vector(acf(sim.a(), lag.max=4, plot=TRUE)$acf[2:5])
+acf.tss.4 <- as.vector(acf(sim.a(), lag.max=4, plot=TRUE)$acf[2:5])
+
+acf.tss.mat <- as.matrix(rbind(acf.tss.1,acf.tss.2,acf.tss.3,acf.tss.4))
+
+
+df <- data.frame()
+
+for (k in 1:1000){
+  
+  row_i <-  as.vector(acf(sim.a(), lag.max=4, plot=FALSE)$acf[2:5])
+  df <- rbind(df,row_i)
+}
+
+acf.tss.mat.1000 <- as.matrix(df)
+colnames(acf.tss.mat.1000) <- c('rho_1','rho_2','rho_3', 'rho_4')
+
+df_corr <- data.frame()
+
+for (i in 1:4){
+ b <- c()
+
+ for (j in 1:4)
+ {
+   b <- c(b, cor(acf.tss.mat.1000[,i],acf.tss.mat.1000[,j]))  
+ }
+ df_corr <- rbind(df_corr,b)
+}
+
+df_cov <- data.frame()
+
+for (i in 1:4){
+ b <- c()
+
+ for (j in 1:4)
+ {
+   b <- c(b, cov(acf.tss.mat.1000[,i],acf.tss.mat.1000[,j]))  
+ }
+ df_cov <- rbind(df_cov,b)
+}
+
+```
