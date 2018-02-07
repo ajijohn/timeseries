@@ -14,10 +14,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
-```{r }
+```{r,include=FALSE}
 sim.a <- function(n=100,a=-2,b=1,c=pi/4)
 {
   Zt <- rnorm(n+2)
+  a + b*Zt[3:(n+2)] + c*Zt[1:n]
+}
+
+sim.b <- function(n=100,a=-3,b=1,c=pi/4)
+{
+  Zt <- rnorm(n+2,sd=4)
   a + b*Zt[3:(n+2)] + c*Zt[1:n]
 }
 
@@ -46,14 +52,14 @@ plot.ACVFbiasedVSunbiased(tss,"Biased & Unbiased Sample ACVF for Xt")
 ## Problem 14 b
 
 
-```{r}
+```{r,include=FALSE}
 
 acf.xt.ts <- acf(tss, lag.max=4, plot=TRUE)$acf
 
 
 ```
 
-```{r}
+```{r,include=FALSE}
 
 dup.row<-function(x,n){
    matrix(rep(x,each=n),nrow=n)
@@ -64,7 +70,7 @@ dup.col <-function(x,n){
 
 ```
 
-```{r}
+```{r,include=FALSE}
 
 #create matrix from vectors
 M <- cbind(tss)
@@ -86,7 +92,7 @@ C <- (n-1)^-1* t(D) %*% D
 ```
 
 
-```{r}
+```{r,include=FALSE}
 
 #create matrix from vectors
 as.vector(acf(tss, lag.max=4, plot=TRUE)$acf[2:5])
@@ -137,3 +143,81 @@ for (i in 1:4){
  colnames(df_cov) <-  c('cov_1','cov_2','cov_3', 'cov_4')
 
 ```
+
+## Sample mean
+```{r}
+
+#knitr::kable(colMeans(acf.tss.mat.1000))
+
+```
+## Correlation Matrix
+```{r}
+
+knitr::kable(df_corr)
+
+```
+
+## Covariance Matrix
+```{r}
+
+knitr::kable(df_cov)
+
+```
+
+### It is very much in sync with what large sample theory suggests
+
+
+
+# Changing the value , a = -2, sd =4
+
+```{r,include=FALSE}
+
+#create matrix from vectors
+set.seed(42)
+df2 <- data.frame()
+
+for (k in 1:1000){
+  
+  row_i <-  as.vector(acf(sim.b(), lag.max=4, plot=FALSE)$acf[2:5])
+  df2<- rbind(df2,row_i)
+}
+
+acf.tss.mat.1000.v2 <- as.matrix(df2)
+colnames(acf.tss.mat.1000.v2) <- c('rho_1_2','rho_2_2','rho_3_2', 'rho_4_2')
+
+df_corr_2 <- data.frame()
+
+for (i in 1:4){
+ b <- c()
+
+ for (j in 1:4)
+ {
+   b <- c(b, cor(acf.tss.mat.1000.v2[,i],acf.tss.mat.1000.v2[,j]))  
+ }
+ df_corr_2 <- rbind(df_corr_2,b)
+}
+
+df_cov_2 <- data.frame()
+
+for (i in 1:4){
+ b <- c()
+
+ for (j in 1:4)
+ {
+   b <- c(b, cov(acf.tss.mat.1000.v2[,i],acf.tss.mat.1000.v2[,j]))  
+ }
+ df_cov_2 <- rbind(df_cov_2,b)
+}
+ colnames(df_corr_2) <-  c('cor_1','cor_2','cor_3', 'cor_4')
+ colnames(df_cov_2) <-  c('cov_1','cov_2','cov_3', 'cov_4')
+
+```
+
+## Covariance Matrix 2
+```{r}
+
+knitr::kable(df_cov_2)
+
+```
+
+
