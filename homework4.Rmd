@@ -1,7 +1,9 @@
 ---
 title: "Homework 4"
-Author: "Aji John"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
+Author: Aji John
 ---
 
 ```{r setup, include=FALSE}
@@ -28,7 +30,7 @@ n <- seq(1,1000,1)
 phi1 <- -0.9
 ratiovar1 <- (1+ phi1)/(n*(1-phi1))
 
-plot(n,ratiovar1,xlab = "n", ylab = "ratio var (xbar/xt) for phi -0.9")
+plot(log10(n),log10(ratiovar1),xlab = "n", ylab = "ratio var (xbar/xt) for phi -0.9")
 
 ```
 
@@ -38,7 +40,7 @@ n <- seq(1,1000,1)
 phi2 <- 0
 ratiovar2 <- (1+ phi2)/(n*(1-phi2))
 
-plot(n,ratiovar2,xlab = "n", ylab = "ratio var (xbar/xt) for phi 0")
+plot(log10(n),log10(ratiovar2),xlab = "n", ylab = "ratio var (xbar/xt) for phi 0")
 
 ```
 
@@ -48,6 +50,6 @@ n <- seq(1,1000,1)
 phi3 <- 0.9
 ratiovar3 <- (1+ phi3)/(n*(1-phi3))
 
-plot(n,ratiovar3,xlab = "n", ylab = "ratio var (xbar/xt) for phi 0.9")
+plot(log10(n),log10(ratiovar3),xlab = "n", ylab = "ratio var (xbar/xt) for phi 0.9")
 
 ```
