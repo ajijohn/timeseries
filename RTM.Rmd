@@ -8,31 +8,27 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-## R Markdown
+## Analysis Mt Rainier
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+I analyze the Mt Rainier data to see if the sites are warming at the same pace or not. My hypothesis is that there would be warming across the mountain, but some sites would be more buffered tgan the other.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Several studies have shown that anthrogrenic impacts have evidenced as regions warming(cite). The melting of ice in Arctic to the increase in CO2(cite) are some of the prominent studies affirming the impacts. Although many studies show the perils, there are many who have assesed the conservation efforts to help preserve what is left(cite).
 
-```{r cars}
-summary(cars)
+Mt Rainier was an important choice, as montanes hold some of the worlds preserved biodiversity.
+
+```{r ,echo=FALSE,include=FALSE}
+
 ```
 
-## Including Plots
+```{r, echo=FALSE,include=FALSE}
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# Objective
 
-
-#Problem 8
 I perform an analysis of Mt Rainier time series along the same lines as the analysis of the accidental deaths (AD) series starting with lecture overhead III–82 (the 3rd set of R code on the course Web site has the code used to analyze the AD series). 
 
-Please feel free to alter choices that were made in the analysis of the AD series if you deem them to be inappropriate for your analysis of the climate series. Create and turn in plots that correspond to overheads III–85, III–87, III–89 (but just show the seasonal pattern for a single year, as is done in III-107), III–92, III–94, III–96, III–97 andIII–98, along with brief descriptions of the steps you took in your analysis (please also turn in the code you used to do your analysis). Finally, state briefly your conclusions about how well the simple modeling approach worked for the climate series.
+Please feel free to alter choices that were made in the analysis of the AD series if you deem them to be inappropriate for your analysis of the climate series. I annotate with brief descriptions of the steps I took in your analysis. Finally, state briefly your conclusions about how well the simple modeling approach worked for the climate series.
 
 ### 
 
@@ -117,16 +113,52 @@ oneset_9yrs_by_month <- oneset_9yrs %>% group_by(year,month) %>% summarise(min_t
 
 # Add key
 oneset_9yrs_by_month$xaxis <- as.double(paste(oneset_9yrs_by_month$year,oneset_9yrs_by_month$month,sep = '.'))
+
+#1 .042 
+#2 .125 
+#3 .208 
+#4 .292 
+#5 .375 
+#6 .458 
+#7 .542 
+#8 .625 
+#9 .708 
+#10 .792  
+#11 .875 
+#12 .958 
+
+#create new xaxis
+oneset_9yrs_by_month$xaxisred <- "0"
+#Redo x-axis
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="01",]$xaxisred = "042"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="02",]$xaxisred = "125"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="03",]$xaxisred = "208"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="04",]$xaxisred = "292"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="05",]$xaxisred = "375"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="06",]$xaxisred = "458"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="07",]$xaxisred = "542"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="08",]$xaxisred = "625"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="09",]$xaxisred = "708"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="10",]$xaxisred = "792"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="11",]$xaxisred = "875"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="12",]$xaxisred = "958"
+
+oneset_9yrs_by_month$nxaxis <- as.double(paste(oneset_9yrs_by_month$year,oneset_9yrs_by_month$xaxisred,sep = '.'))
+
 # For every year we should have 12 values
 
 oneset_9yrs_by_month %>% ggplot(aes(year,mean_t,color=month)) + geom_point() +xlab("Time") + ylab("Mean Temperature (deg C)")
 
+#Applying moving average filter
 m.hat.oneset <- filter.with.padding(oneset_9yrs_by_month$mean_t,c(1/24,rep(1/12,11),1/24))
 
-plot(oneset_9yrs_by_month$xaxis,oneset_9yrs_by_month$mean_t,col="blue",xlab="year",typ="b",
-     ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temp Values",cex=0.5)
-lines(oneset_9yrs_by_month$xaxis,m.hat.oneset,col="red",lwd=2)
+#plot(oneset_9yrs_by_month$xaxis,oneset_9yrs_by_month$mean_t,col="blue",xlab="year",typ="b",
+#     ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temp Values",cex=0.5)
+#lines(oneset_9yrs_by_month$xaxis,m.hat.oneset,col="red",lwd=2)
 
+plot(oneset_9yrs_by_month$nxaxis,oneset_9yrs_by_month$mean_t,col="blue",xlab="year",typ="b",
+     ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temp Values",cex=0.5)
+lines(oneset_9yrs_by_month$nxaxis,m.hat.oneset,col="red",lwd=2)
 ```
 ### III–87
 
@@ -136,8 +168,8 @@ Removing the trend component and plotting.
 
 oneset.u <- oneset_9yrs_by_month$mean_t - m.hat.oneset
 
-plot(oneset_9yrs_by_month$xaxis,oneset.u,col="blue",xlab="year",typ="b",ylab=expression(paste(u[t]==x[t]-hat(m)[t]," (ppm)")),main="Preliminary Detrending of Climate Series",cex=0.5)
-points(oneset_9yrs_by_month$xaxis[seq(12,96,12)],oneset.u[seq(12,96,12)],pch=16,col="red",cex=0.6)
+plot(oneset_9yrs_by_month$nxaxis,oneset.u,col="blue",xlab="year",typ="b",ylab=expression(paste(u[t]==x[t]-hat(m)[t]," (ppm)")),main="Preliminary Detrending of Climate Series",cex=0.5)
+points(oneset_9yrs_by_month$nxaxis[seq(12,96,12)],oneset.u[seq(12,96,12)],pch=16,col="red",cex=0.6)
 
 
 
@@ -172,20 +204,20 @@ oneset.w.j <- rowMeans(matrix(oneset.u ,nrow=12))
 oneset.s.j.hat <- rep(oneset.w.j  - mean(oneset.w.j ),8)
 oneset.d <- oneset_9yrs_by_month$mean_t - oneset.s.j.hat
 
-oneset.d.reg <- lm(oneset.d  ~ oneset_9yrs_by_month$xaxis + I(oneset_9yrs_by_month$xaxis^2))
+oneset.d.reg <- lm(oneset.d  ~ oneset_9yrs_by_month$nxaxis + I(oneset_9yrs_by_month$nxaxis^2))
 
-plot(oneset_9yrs_by_month$xaxis,oneset.d,col="blue",xlab="year",typ="b",
+plot(oneset_9yrs_by_month$nxaxis,oneset.d,col="blue",xlab="year",typ="b",
      ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (thousands)")),
      main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),
      cex=0.5)
-lines(oneset_9yrs_by_month$xaxis,fitted(oneset.d.reg ),col="purple",lwd=2)
+lines(oneset_9yrs_by_month$nxaxis,fitted(oneset.d.reg ),col="purple",lwd=2)
 
 ```
 ### III–94 Residuals removed
 
 ```{r,echo=TRUE,include=TRUE}
 
-plot(oneset_9yrs_by_month$xaxis,resid(oneset.d.reg),col="blue",xlab="year",typ="b",
+plot(oneset_9yrs_by_month$nxaxis,resid(oneset.d.reg),col="blue",xlab="year",typ="b",
      ylab=expression(paste(r[t] == x[t] - hat(m)[t] - hat(s)[t]," (degC)")),
      main=expression(paste("Residuals {",r[t],"} from Removal of {", hat(m)[t],"} and {",hat(s)[t],"}")),
      cex=0.5)
@@ -214,7 +246,7 @@ Testing whether the resultant is a AR(1) model.
 
 oneset.z <- resid(oneset.d.reg)[-1] - phi*resid(oneset.d.reg)[-length(resid(oneset.d.reg))]
 
-plot(oneset_9yrs_by_month$xaxis[-1],oneset.z ,col="blue",xlab="year",
+plot(oneset_9yrs_by_month$nxaxis[-1],oneset.z ,col="blue",xlab="year",
      typ="b",ylab=expression(paste(z[t]==r[t]-hat(phi)*r[t-1]," (thousands)")),
      main=expression(paste("Residuals ",
        z[t]==r[t]-hat(phi)*r[t-1]," from Fitted AR(1) Model")),
@@ -231,3 +263,4 @@ plot.ACFest(oneset.z, expression(paste("Sample ACF for {", z[t],"}")))[2]
 
 ```
 
+## Maybe moving average model
