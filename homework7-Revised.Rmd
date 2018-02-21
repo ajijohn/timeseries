@@ -93,7 +93,9 @@ innovations.algorithm <- function(acvf,n.max=length(acvf)-1)
 #Yt = 6/13 Yt−1 + Z2,t
 AR1.acvf <- as.vector(ARMAacf(ar=c(6/13),ma=0,lag=4)) 
 AR1.pacvf <- as.vector(ARMAacf(ar=c(6/13),ma=0,lag=4,pacf = TRUE))
-(results <- LD.recursions(AR1.acvf))
+
+print('LD')
+print((results <- LD.recursions(AR1.acvf)))
 
 par(mfrow=c(1,2))
 plot(AR1.acvf,type = "h",xlab="lag")
@@ -101,6 +103,16 @@ abline(h=0)
 
 plot(AR1.pacvf,type = "h",xlab="lag")
 abline(h=0)
+```
+
+#innovations ar(1)
+```{r,include=TRUE}
+
+#Yt = 6/13 Yt−1 + Z2,t
+
+print('innovations')
+(results <- innovations.algorithm(AR1.acvf))
+
 ```
 
 ```{r,include=TRUE}
@@ -146,3 +158,32 @@ knitr::kable(df_corr)
 knitr::kable(df_cov)
 
 ```
+
+
+
+
+
+## Plot ENSO
+```{r}
+
+
+ENSO.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/ENSO.txt")
+StPaul.ENSO.times <- seq(1915+7/12,2009+2/12,1/12)
+plot(StPaul.ENSO.times,ENSO.ts,typ="l",xlab="year",ylab=expression(x[t]),col="blue",main="ENSO Index")
+
+ss.pacf <- acf(ENSO.ts, lag.max=40, type="partial", plot=FALSE)
+xs <- 1:20
+ys <- ss.pacf$acf[1:20]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for ENSO Series")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(ENSO.ts)
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+#Slkide 12-10
+```
+
+We have PACF at lag 1,3 is out of 95% bounds, so it is not white noise.
+
