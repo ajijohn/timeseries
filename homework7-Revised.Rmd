@@ -120,6 +120,25 @@ print('innovations')
 #Xt = Z1,t + 2/3Z1,t−1 (MA(1))
 ma1.acvf <- as.vector(ARMAacf(ma=c(2/3),lag=4))
 ma1.pacvf <- as.vector(ARMAacf(ma=c(2/3),lag=4,pacf = TRUE))
+(results <- LD.recursions(ma1.acvf))
+
+### > results$vs  # v_0, v_1, v_2, v_3
+### [1] 1.777778 1.333333 1.000000 1.000000
+### > results$thetas[[1]]  # theta_{1,1}
+### [1] 0.5
+### > results$thetas[[2]]  # theta_{2,1}, theta_{2,2}
+### [1]  0.750 -0.125
+### > results$thetas[[3]]  # theta_{3,1}, theta_{3,2}, theta_{3,3}
+### [1]  0.75000  0.06250 -0.34375
+
+
+```
+
+```{r,include=TRUE}
+
+#Xt = Z1,t + 2/3Z1,t−1 (MA(1))
+ma1.acvf <- as.vector(ARMAacf(ma=c(2/3),lag=4))
+ma1.pacvf <- as.vector(ARMAacf(ma=c(2/3),lag=4,pacf = TRUE))
 (results <- innovations.algorithm(ma1.acvf))
 
 ### > results$vs  # v_0, v_1, v_2, v_3
@@ -131,6 +150,12 @@ ma1.pacvf <- as.vector(ARMAacf(ma=c(2/3),lag=4,pacf = TRUE))
 ### > results$thetas[[3]]  # theta_{3,1}, theta_{3,2}, theta_{3,3}
 ### [1]  0.75000  0.06250 -0.34375
 
+
+```
+
+```{r,include=TRUE}
+
+#Xt = Z1,t + 2/3Z1,t−1 (MA(1))
 par(mfrow=c(1,2))
 plot(ma1.acvf,type = "h",xlab="lag")
 abline(h=0)
