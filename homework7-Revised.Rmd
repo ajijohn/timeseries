@@ -86,11 +86,9 @@ innovations.algorithm <- function(acvf,n.max=length(acvf)-1)
   }
 ```
 
-## Problem 14 b
-
+#LD recursions ar(1)
 ```{r,include=TRUE}
 
-#Yt = 6/13 Yt−1 + Z2,t
 AR1.acvf <- as.vector(ARMAacf(ar=c(6/13),ma=0,lag=4)) 
 AR1.pacvf <- as.vector(ARMAacf(ar=c(6/13),ma=0,lag=4,pacf = TRUE))
 
@@ -108,16 +106,14 @@ abline(h=0)
 #innovations ar(1)
 ```{r,include=TRUE}
 
-#Yt = 6/13 Yt−1 + Z2,t
-
 print('innovations')
 (results <- innovations.algorithm(AR1.acvf))
 
 ```
 
+#LD recursions MA(1)
 ```{r,include=TRUE}
 
-#Xt = Z1,t + 2/3Z1,t−1 (MA(1))
 ma1.acvf <- as.vector(ARMAacf(ma=c(2/3),lag=4))
 ma1.pacvf <- as.vector(ARMAacf(ma=c(2/3),lag=4,pacf = TRUE))
 (results <- LD.recursions(ma1.acvf))
@@ -134,9 +130,10 @@ ma1.pacvf <- as.vector(ARMAacf(ma=c(2/3),lag=4,pacf = TRUE))
 
 ```
 
+#innovations ma(1)
 ```{r,include=TRUE}
 
-#Xt = Z1,t + 2/3Z1,t−1 (MA(1))
+
 ma1.acvf <- as.vector(ARMAacf(ma=c(2/3),lag=4))
 ma1.pacvf <- as.vector(ARMAacf(ma=c(2/3),lag=4,pacf = TRUE))
 (results <- innovations.algorithm(ma1.acvf))
@@ -153,9 +150,9 @@ ma1.pacvf <- as.vector(ARMAacf(ma=c(2/3),lag=4,pacf = TRUE))
 
 ```
 
-```{r,include=TRUE}
+```{r,warning=FALSE,error=FALSE,message=FALSE,echo=FALSE,include=FALSE}
 
-#Xt = Z1,t + 2/3Z1,t−1 (MA(1))
+
 par(mfrow=c(1,2))
 plot(ma1.acvf,type = "h",xlab="lag")
 abline(h=0)
@@ -167,20 +164,20 @@ abline(h=0)
 ## Sample mean
 ```{r}
 
-colMeans(acf.tss.mat.1000)
+#colMeans(acf.tss.mat.1000)
 
 ```
 ## Correlation Matrix
 ```{r}
 
-knitr::kable(df_corr)
+#knitr::kable(df_corr)
 
 ```
 
 ## Covariance Matrix
 ```{r}
 
-knitr::kable(df_cov)
+#knitr::kable(df_cov)
 
 ```
 
@@ -188,13 +185,12 @@ knitr::kable(df_cov)
 
 
 
-## Plot ENSO
-```{r}
+# Plotting PACF for  ENSO
+```{r,echo=FALSE}
 
 
 ENSO.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/ENSO.txt")
 StPaul.ENSO.times <- seq(1915+7/12,2009+2/12,1/12)
-plot(StPaul.ENSO.times,ENSO.ts,typ="l",xlab="year",ylab=expression(x[t]),col="blue",main="ENSO Index")
 
 ss.pacf <- acf(ENSO.ts, lag.max=40, type="partial", plot=FALSE)
 xs <- 1:20
@@ -212,3 +208,119 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 
 We have PACF at lag 1,3 is out of 95% bounds, so it is not white noise.
 
+# Plotting PACF for residuals {rt} from Lake Huron level time series
+
+
+```{r,warning=FALSE,error=FALSE,message=FALSE,echo=FALSE}
+
+lh.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/Lake-Huron.txt")
+N.lh <- length(lh.ts)
+lh.years <- 1875:1972
+lh.reg <- lm(lh.ts ~ lh.years)
+
+
+ss.pacf <- acf(resid(lh.reg), lag.max=40, type="partial", plot=FALSE)
+xs <- 1:20
+ys <- ss.pacf$acf[1:20]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Lake Hurom residuals(rt) Series")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(resid(lh.reg))
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+#Slkide 12-10
+```
+
+
+Lake Huron looks to be AR(2) model and, for h > p (which is 2), we see that phi h,h is 0. This is not a semblance of white noise as PACF is IID(0,1/98) for orders greater than 2 .
+
+
+# Sample PACF residuals {rt} from accidental deaths time series 
+
+```{r,warning=FALSE,error=FALSE,message=FALSE,echo=FALSE}
+
+filter.with.padding <- function(x,the.filter,iter=1)
+{
+    q <- (length(the.filter)-1)/2
+    n <- length(x)
+    w <- filter(c(rep(x[1],q),x,rep(x[n],q)),the.filter)[(q+1):(q+n)]
+    if(iter > 1) for(i in 2:iter) w <- filter(c(rep(w[1],q),w,rep(w[n],q)),the.filter)[(q+1):(q+n)]
+    return(w)
+}
+
+ad.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/deaths.txt")/1000
+ad.years <- seq(1973,1979-1/12,1/12)
+m.hat <- filter.with.padding(ad.ts,c(1/24,rep(1/12,11),1/24))
+
+ad.u <- ad.ts - m.hat
+length(ad.u)  ## 72, i.e., exactly 6 years of data
+w.j <- rowMeans(matrix(ad.u,nrow=12))
+s.j.hat <- rep(w.j - mean(w.j),6)
+ad.d <- ad.ts - s.j.hat
+
+d.reg <- lm(ad.d ~ ad.years + I(ad.years^2))
+
+ss.pacf <- acf(resid(d.reg), lag.max=40, type="partial", plot=FALSE)
+xs <- 1:20
+ys <- ss.pacf$acf[1:20]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF residuals {rt} from accidental deaths time series")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(resid(d.reg))
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+#Slkide 12-10
+```
+
+AD time series looks to be AR(1) model and, for h > p (which is 1), we see that phi h,h is 0. This is not a semblance of white noise as PACF is IID(0,1/72) for orders greater than 1.
+
+# Sample PACF for wind speed time series 
+```{r,warning=FALSE,error=FALSE,message=FALSE,echo=FALSE}
+
+ws.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/wind-speed.txt")
+
+
+ss.pacf <- acf(ws.ts, lag.max=40, type="partial", plot=FALSE)
+xs <- 1:20
+ys <- ss.pacf$acf[1:20]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Wind speed time Series")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(ws.ts)
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+#Slkide 12-10
+```
+
+Windspeed time series looks to be AR(1) model and, for h > p (which is 1), we see that phi h,h is 0. This is not a semblance of white noise as PACF is IID(0,1/128) for orders greater than 1.
+
+
+
+# Sample PACF for NPI time series 
+```{r,warning=FALSE,error=FALSE,message=FALSE,echo=FALSE}
+
+npi.ts <- scan("http://faculty.washington.edu/dbp/s519/Data/NPI.txt")
+
+
+ss.pacf <- acf(npi.ts, lag.max=40, type="partial", plot=FALSE)
+xs <- 1:20
+ys <- ss.pacf$acf[1:20]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for NPI  time Series")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(npi.ts)
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+#Slkide 12-10
+```
+
+
+MPI time series looks to be white noise, we see that phi 1,1 through phi h,h are approximately 0. This is infact a semblance of white noise as PACF is IID(0,1/118) (h << n).
