@@ -10,7 +10,7 @@ library(tidyverse)
 
 ## Analysis Mt Rainier
 
-I analyze the Mt Rainier data to see if the sites are warming at the same pace or not. My hypothesis is that there would be warming across the mountain, but some sites would be more buffered tgan the other.
+I analyze the Mt Rainier data to see if the sites are warming at the same pace or not. My hypothesis is that there would be warming across the mountain, but some sites would be more buffered than the other.
 
 Several studies have shown that anthrogrenic impacts have evidenced as regions warming(cite). The melting of ice in Arctic to the increase in CO2(cite) are some of the prominent studies affirming the impacts. Although many studies show the perils, there are many who have assesed the conservation efforts to help preserve what is left(cite).
 
@@ -263,4 +263,72 @@ plot.ACFest(oneset.z, expression(paste("Sample ACF for {", z[t],"}")))[2]
 
 ```
 
-## Maybe moving average model
+## Explorations to find what type of model
+
+```{r,echo=TRUE,include=TRUE}
+ss.pacf <- acf(oneset_9yrs_by_month$mean_t, lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(oneset_9yrs_by_month$mean_t)
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+```
+```{r,echo=TRUE,include=TRUE}
+plot(oneset_9yrs_by_month$nxaxis[10:94],oneset_9yrs_by_month$mean_t[10:94],col="blue",xlab="year",typ="b",
+     ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temperature Values",cex=0.5)
+
+#Applying moving average filter
+m.hat.oneset.wy <- filter.with.padding(oneset_9yrs_by_month$mean_t[10:94],c(1/24,rep(1/12,11),1/24))
+
+
+lines(oneset_9yrs_by_month$nxaxis[10:94],m.hat.oneset.wy,col="red",lwd=2)  
+```
+
+
+# Do the analysis in water years - starting fromOctober
+
+
+
+```{r,echo=TRUE,include=TRUE}
+ss.pacf <- acf(oneset_9yrs_by_month$mean_t[10:94], lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series(Water year)")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(oneset_9yrs_by_month$mean_t[10:94])
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+```
+
+```{r,echo=TRUE,include=TRUE}
+
+plot.ACFest(oneset_9yrs_by_month$mean_t[10:94], expression(paste("Sample ACF Mt Rainier for (Water Year) {", z[t],"}")))[2]
+
+```
+
+So here it looks like we have ARMA(p,q) with coefficiientients probably in negatie. Strong likelihood that possible orders of AR
+
+
+#lets just analysie deseasonalized PACF and ACF
+
+```{r,echo=TRUE,include=TRUE}
+par(mfrow=c(1,2))
+plot.ACFest(m.hat.oneset.wy, expression(paste("Sample ACF Mt Rainier for (Water Year) {", z[t],"}")))[2]
+abline(h=0)
+
+ss.pacf <- acf(m.hat.oneset.wy, lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series(Water year)")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(m.hat.oneset.wy)
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+```
