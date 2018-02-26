@@ -317,13 +317,13 @@ So here it looks like we have ARMA(p,q) with coefficiientients probably in negat
 
 ```{r,echo=TRUE,include=TRUE}
 par(mfrow=c(1,2))
-plot.ACFest(m.hat.oneset.wy, expression(paste("Sample ACF Mt Rainier for (Water Year) {", z[t],"}")))[2]
+plot.ACFest(m.hat.oneset.wy, expression(paste("Sample ACF Mt Rainier-Deseason {", z[t],"}")))[2]
 abline(h=0)
 
 ss.pacf <- acf(m.hat.oneset.wy, lag.max=40, type="partial", plot=FALSE)
 xs <- 1:40
 ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series(Water year)")
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier -Deseason")
 points(xs,ys,col="red",cex=0.5)
 n.ss <- length(m.hat.oneset.wy)
 CI.hw <- 1.96/sqrt(n.ss)
@@ -332,3 +332,94 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 
 
 ```
+
+
+
+# Comparisin when not deasonalized
+```{r,echo=TRUE,include=TRUE}
+par(mfrow=c(1,2))
+plot.ACFest(oneset_9yrs_by_month$mean_t[10:94], expression(paste("Sample ACF Mt Rainier for (Water Year) {", z[t],"}")))[2]
+abline(h=0)
+
+ss.pacf <- acf(oneset_9yrs_by_month$mean_t[10:94], lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series(Water year)")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(oneset_9yrs_by_month$mean_t[10:94])
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+```
+
+### Assuming that the trend is present, and the trend is valid, we go about estomating it
+
+```{r,echo=TRUE,include=TRUE}
+
+oneset.u <- oneset_9yrs_by_month$mean_t - m.hat.oneset
+
+oneset.w.j <- rowMeans(matrix(oneset.u ,nrow=12))
+oneset.s.j.hat <- rep(oneset.w.j  - mean(oneset.w.j ),8)
+oneset.d <- oneset_9yrs_by_month$mean_t - oneset.s.j.hat
+
+oneset.d.reg <- lm(oneset.d  ~ oneset_9yrs_by_month$nxaxis + I(oneset_9yrs_by_month$nxaxis^2))
+
+plot(oneset_9yrs_by_month$nxaxis,oneset.d,col="blue",xlab="year",typ="b",
+     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (thousands)")),
+     main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),
+     cex=0.5)
+lines(oneset_9yrs_by_month$nxaxis,fitted(oneset.d.reg ),col="purple",lwd=2)
+
+```
+
+#lets just analysie deseasonalized PACF and ACF  (calendar year)
+
+```{r,echo=TRUE,include=TRUE}
+par(mfrow=c(1,2))
+plot.ACFest(m.hat.oneset, expression(paste("Sample ACF Mt Rainier-Deseason {", z[t],"}")))[2]
+abline(h=0)
+
+ss.pacf <- acf(m.hat.oneset, lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier -Deseason")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(m.hat.oneset)
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+```
+
+
+#lets just analysie deseasonalized /detrended PACF and ACF  (calendar year)
+
+```{r,echo=TRUE,include=TRUE}
+phi <- plot.ACFest(resid(oneset.d.reg), 
+        expression(paste("Sample ACF for {", r[t],"}")))[2]
+        
+oneset.z <- resid(oneset.d.reg)[-1] - phi*resid(oneset.d.reg)[-length(resid(oneset.d.reg))] 
+
+```
+
+```{r,echo=TRUE,include=TRUE}
+par(mfrow=c(1,2))
+plot.ACFest(oneset.z , expression(paste("Sample ACF -Desea/Detre {", z[t],"}")))[2]
+abline(h=0)
+
+ss.pacf <- acf(oneset.z , lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF -Deseason/Detre")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(oneset.z )
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+
+```
+        
