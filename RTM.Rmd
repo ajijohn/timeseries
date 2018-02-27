@@ -367,7 +367,7 @@ oneset.d <- oneset_9yrs_by_month$mean_t - oneset.s.j.hat
 oneset.d.reg <- lm(oneset.d  ~ oneset_9yrs_by_month$nxaxis + I(oneset_9yrs_by_month$nxaxis^2))
 
 plot(oneset_9yrs_by_month$nxaxis,oneset.d,col="blue",xlab="year",typ="b",
-     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (thousands)")),
+     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (deg C)")),
      main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),
      cex=0.5)
 lines(oneset_9yrs_by_month$nxaxis,fitted(oneset.d.reg ),col="purple",lwd=2)
@@ -384,7 +384,7 @@ abline(h=0)
 ss.pacf <- acf(m.hat.oneset, lag.max=40, type="partial", plot=FALSE)
 xs <- 1:40
 ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier -Deseason")
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF - Deseason")
 points(xs,ys,col="red",cex=0.5)
 n.ss <- length(m.hat.oneset)
 CI.hw <- 1.96/sqrt(n.ss)
@@ -405,15 +405,30 @@ oneset.z <- resid(oneset.d.reg)[-1] - phi*resid(oneset.d.reg)[-length(resid(ones
 
 ```
 
+Residuals of the fitted AR(1) model
+
+```{r,echo=TRUE,include=TRUE}
+
+plot(oneset_9yrs_by_month$nxaxis[-1],oneset.z ,col="blue",xlab="year",
+     typ="b",ylab=expression(paste(z[t]==r[t]-hat(phi)*r[t-1]," (deg C)")),
+     main=expression(paste("Residuals ",
+       z[t]==r[t]-hat(phi)*r[t-1]," from Fitted AR(1) Model")),
+     cex=0.5)
+
+```
+
+# Inspect the ACF and PACF of the desea/detre series
+
+### TODO - put the n 
 ```{r,echo=TRUE,include=TRUE}
 par(mfrow=c(1,2))
-plot.ACFest(oneset.z , expression(paste("Sample ACF -Desea/Detre {", z[t],"}")))[2]
+plot.ACFest(oneset.z , expression(paste("Sample ACF {", z[t],"}")))[2]
 abline(h=0)
 
 ss.pacf <- acf(oneset.z , lag.max=40, type="partial", plot=FALSE)
 xs <- 1:40
 ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF -Deseason/Detre")
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF")
 points(xs,ys,col="red",cex=0.5)
 n.ss <- length(oneset.z )
 CI.hw <- 1.96/sqrt(n.ss)
@@ -422,4 +437,75 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 
 
 ```
-        
+
+# Do a test of IID White Noise
+```{r,echo=TRUE,include=TRUE}
+source("http://faculty.washington.edu/dbp/s519/R-code/diagnostic-tests.R")
+
+plot.figPortmanteau <- function(Qs, quants, p=0, main=NULL)
+{
+    N.Qs <- length(Qs)
+    hs <- (p+1):(N.Qs+p)
+    plot(hs,quants,typ="n",xlab="h  (lag)",ylab=expression(paste(Q[LB],"(h) and 95% quantile")),xlim=c(0,N.Qs+p),ylim=c(0,max(c(Qs,quants))),main=main)
+    points(hs,Qs,pch=16,col="blue")
+    segments(seq(p+0.75,by=1,length=N.Qs),quants,seq(p+1.25,by=1,length=N.Qs),quants,lwd=2,col="red")
+}
+
+
+
+onoise.acf.zs <- acf(oneset.z, lag.max=40, plot=FALSE)$acf[-1]
+Q.zs <- sapply(1:40,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(oneset.z))})
+quants.1.40 <- sapply((1:40)-3,function(dof) {qchisq(0.05,dof,lower=FALSE)})
+
+plot.figPortmanteau(Q.zs,quants.1.40,3,main=expression(paste("Portmanteau Tests of Ocean noise {", z[t],"}")))
+```
+
+
+# comment on ACF and PACF 
+
+## Below doing it without detrending/desea ACF
+
+```{r,echo=TRUE,include=TRUE}
+ss.acf <- acf(oneset_9yrs_by_month$mean_t, lag.max=40, plot=FALSE)
+xs <- 1:40
+ys <- ss.acf$acf[2:41]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="ACF",ylim=c(-1,1),col="blue",main="Sample ACF for Mt Rainier Series")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(oneset_9yrs_by_month$mean_t)
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+xs <- 1:50
+lines(xs,1.96*sqrt(n.ss-xs)/n.ss,col="magenta",lty="dashed")
+lines(xs,-1.96*sqrt(n.ss-xs)/n.ss,col="magenta",lty="dashed")
+```
+
+```{r,echo=TRUE,include=TRUE}
+ss.pacf <- acf(oneset_9yrs_by_month$mean_t, lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(oneset_9yrs_by_month$mean_t)
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+```
+
+```{r,echo=TRUE,include=TRUE}
+source("http://faculty.washington.edu/dbp/s519/R-code/step-down-LD-recursions.R")
+source("http://faculty.washington.edu/dbp/s519/R-code/ar-coeffs-to-acvs.R")
+
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="ACF",ylim=c(-1,1),col="blue",main="Sample and Fitted AR(2) ACFs")
+points(xs,ys,col="red",cex=0.5)
+abline(h=0,lty="dashed")
+ss.ar2 <- ar(oneset_9yrs_by_month$mean_t,aic=FALSE,order.max=2)
+ss.acvf <- ar.coeffs.to.acvs(ss.ar2$ar, 40)
+ss.acf <- ss.acvf/ss.acvf[1]
+lines(0:40,ss.acf,col="blue",lwd=2)
+
+```
+
+## Maybe try which order suffices
+
