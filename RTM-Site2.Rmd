@@ -8,7 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-## Analysis Mt Rainier
+# Analysis Mt Rainier
 
 I analyze the Mt Rainier data to see if the sites are warming at the same pace or not. My hypothesis is that there would be warming across the mountain, but some sites would be more buffered than the other.
 
@@ -24,17 +24,8 @@ Mt Rainier was an important choice, as montanes hold some of the worlds preserve
 
 ```
 
-# Objective
-
-I perform an analysis of Mt Rainier time series along the same lines as the analysis of the accidental deaths (AD) series starting with lecture overhead III–82 (the 3rd set of R code on the course Web site has the code used to analyze the AD series). 
-
-Please feel free to alter choices that were made in the analysis of the AD series if you deem them to be inappropriate for your analysis of the climate series. I annotate with brief descriptions of the steps I took in your analysis. Finally, state briefly your conclusions about how well the simple modeling approach worked for the climate series.
-
-### 
-
-
-```{r,echo=TRUE,include=TRUE}
-onest <- read.csv("data/AB08-A2_hourly.csv")
+```{r,echo=FALSE,include=FALSE}
+onest <- read.csv("data/AM16-A2_hourly.csv")
 onest$dt <- strptime(onest$DATE, format = "%Y-%m-%d %H:%M:%S")
 str(onest)
 ### define function to do filtering ...
@@ -75,8 +66,18 @@ plot(onest$dt,onest$series_xts,col="blue",xlab="year",typ="l",
 
 ```
 
-### III–85 - Seasonal component taken out
-#### Use a smoothing filter to take the seasonal component out
+
+```{r,echo=FALSE,include=TRUE}
+
+
+plot(onest$dt,onest$series_xts,col="blue",xlab="year",typ="l",
+     ylab=expression(x[t]),main=expression(paste("Site AB08: A2",
+                                                 " Series from MT Rainier , WA")))
+
+```
+# Seasonal component taken out
+
+Use a smoothing filter to take the seasonal component out
 
 ```{r,echo=FALSE,include=FALSE}
 onest$year <- substring(as.character(onest$DATE),1,4)
@@ -85,11 +86,7 @@ onest%>% select(c('DATE','series_xts','year')) %>% group_by(year) %>% summarise(
 
 ```
 
-Better explanation needed.
-
-### III–85
-
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 
 #ggplot needs date in POSIXct
 onest$dt_txn <- as.POSIXct(onest$DATE,ormat = "%Y-%m-%d %H:%M:%S")
@@ -147,7 +144,7 @@ oneset_9yrs_by_month$nxaxis <- as.double(paste(oneset_9yrs_by_month$year,oneset_
 
 # For every year we should have 12 values
 
-oneset_9yrs_by_month %>% ggplot(aes(year,mean_t,color=month)) + geom_point() +xlab("Time") + ylab("Mean Temperature (deg C)")
+#oneset_9yrs_by_month %>% ggplot(aes(year,mean_t,color=month)) + geom_point() +xlab("Time") + ylab("Mean Temperature (deg C)")
 
 #Applying moving average filter
 m.hat.oneset <- filter.with.padding(oneset_9yrs_by_month$mean_t,c(1/24,rep(1/12,11),1/24))
@@ -160,11 +157,10 @@ plot(oneset_9yrs_by_month$nxaxis,oneset_9yrs_by_month$mean_t,col="blue",xlab="ye
      ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temp Values",cex=0.5)
 lines(oneset_9yrs_by_month$nxaxis,m.hat.oneset,col="red",lwd=2)
 ```
-### III–87
+# Removing the trend component.
 
-Removing the trend component and plotting.
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 
 oneset.u <- oneset_9yrs_by_month$mean_t - m.hat.oneset
 
@@ -174,29 +170,27 @@ points(oneset_9yrs_by_month$nxaxis[seq(12,96,12)],oneset.u[seq(12,96,12)],pch=16
 
 
 ```
-### III–89
+# Extracting for one year to show the seasonal pattern.
 
-Extracting for one year to show the seasonal pattern.
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 
 
 oneset.w.j <- rowMeans(matrix(oneset.u ,nrow=12))
 
 plot(1:12,oneset.w.j- mean(oneset.w.j),col="blue",xlab="year",
      typ="b",ylab=expression(hat(s)[j]),
-     main=expression(paste("Climate Step 3: Form Estimate {",hat(s)[j],"} of Seasonal Pattern")),
+     main=expression(paste("Climate Form Estimate {",hat(s)[j],"} of Seasonal Pattern")),
      ylim=c(-9,9),cex=0.5)
 
 
 ```
 
-# Verify it by the seasonal plot
+# Deasonalized data with trend estimate
 
 
-###  III–92 (Deasonalized data with trend estimate)
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 
 #get all the years(columns), rows(minths)
 #average all the jan, feb... dec
@@ -213,9 +207,9 @@ plot(oneset_9yrs_by_month$nxaxis,oneset.d,col="blue",xlab="year",typ="b",
 lines(oneset_9yrs_by_month$nxaxis,fitted(oneset.d.reg ),col="purple",lwd=2)
 
 ```
-### III–94 Residuals removed
+# Residuals removed (WN ?)
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 
 plot(oneset_9yrs_by_month$nxaxis,resid(oneset.d.reg),col="blue",xlab="year",typ="b",
      ylab=expression(paste(r[t] == x[t] - hat(m)[t] - hat(s)[t]," (degC)")),
@@ -224,119 +218,30 @@ plot(oneset_9yrs_by_month$nxaxis,resid(oneset.d.reg),col="blue",xlab="year",typ=
 
 ```
 
-### III–96
+# ACF of Residuals
 
-** Fails null hypothesis 
-** Plotting the residuals and showing the 95%CIs
+5% test
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 
 phi <- plot.ACFest(resid(oneset.d.reg), 
         expression(paste("Sample ACF for {", r[t],"}")))[2]
 
-```
+oneset.z <- resid(oneset.d.reg)[-1] - phi*resid(oneset.d.reg)[-length(resid(oneset.d.reg))] 
 
-
-
-### III–97 
-
-Testing whether the resultant is a AR(1) model.
-
-```{r,echo=TRUE,include=TRUE}
-
-oneset.z <- resid(oneset.d.reg)[-1] - phi*resid(oneset.d.reg)[-length(resid(oneset.d.reg))]
-
-plot(oneset_9yrs_by_month$nxaxis[-1],oneset.z ,col="blue",xlab="year",
-     typ="b",ylab=expression(paste(z[t]==r[t]-hat(phi)*r[t-1]," (thousands)")),
-     main=expression(paste("Residuals ",
-       z[t]==r[t]-hat(phi)*r[t-1]," from Fitted AR(1) Model")),
-     cex=0.5)
-
-```
-### III–98
-
-ACF for residuals from the fitted AR(1) model, very good, but three exceptions - not that bad
-
-```{r,echo=TRUE,include=TRUE}
-
-plot.ACFest(oneset.z, expression(paste("Sample ACF for {", z[t],"}")))[2]
-
-```
-
-## Explorations to find what type of model
-
-```{r,echo=TRUE,include=TRUE}
-ss.pacf <- acf(oneset_9yrs_by_month$mean_t, lag.max=40, type="partial", plot=FALSE)
-xs <- 1:40
-ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series")
-points(xs,ys,col="red",cex=0.5)
-n.ss <- length(oneset_9yrs_by_month$mean_t)
-CI.hw <- 1.96/sqrt(n.ss)
-abline(h=0,lty="dashed")
-abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
-```
-```{r,echo=TRUE,include=TRUE}
-plot(oneset_9yrs_by_month$nxaxis[10:94],oneset_9yrs_by_month$mean_t[10:94],col="blue",xlab="year",typ="b",
-     ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temperature Values",cex=0.5)
-
-#Applying moving average filter
-m.hat.oneset.wy <- filter.with.padding(oneset_9yrs_by_month$mean_t[10:94],c(1/24,rep(1/12,11),1/24))
-
-
-lines(oneset_9yrs_by_month$nxaxis[10:94],m.hat.oneset.wy,col="red",lwd=2)  
-```
-
-
-# Do the analysis in water years - starting fromOctober
-
-
-
-```{r,echo=TRUE,include=TRUE}
-ss.pacf <- acf(oneset_9yrs_by_month$mean_t[10:94], lag.max=40, type="partial", plot=FALSE)
-xs <- 1:40
-ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series(Water year)")
-points(xs,ys,col="red",cex=0.5)
-n.ss <- length(oneset_9yrs_by_month$mean_t[10:94])
-CI.hw <- 1.96/sqrt(n.ss)
-abline(h=0,lty="dashed")
-abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
-```
-
-```{r,echo=TRUE,include=TRUE}
-
-plot.ACFest(oneset_9yrs_by_month$mean_t[10:94], expression(paste("Sample ACF Mt Rainier for (Water Year) {", z[t],"}")))[2]
-
-```
-
-So here it looks like we have ARMA(p,q) with coefficiientients probably in negatie. Strong likelihood that possible orders of AR
-
-
-#lets just analysie deseasonalized PACF and ACF
-
-```{r,echo=TRUE,include=TRUE}
-par(mfrow=c(1,2))
-plot.ACFest(m.hat.oneset.wy, expression(paste("Sample ACF Mt Rainier-Deseason {", z[t],"}")))[2]
-abline(h=0)
-
-ss.pacf <- acf(m.hat.oneset.wy, lag.max=40, type="partial", plot=FALSE)
-xs <- 1:40
-ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier -Deseason")
-points(xs,ys,col="red",cex=0.5)
-n.ss <- length(m.hat.oneset.wy)
-CI.hw <- 1.96/sqrt(n.ss)
-abline(h=0,lty="dashed")
-abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
-
+isAboveThreshold <- function(X) 
+   { X[ ifelse(X > 0.20  , TRUE,FALSE)]
+}
 
 ```
 
 
 
-# Comparisin when not deasonalized
-```{r,echo=TRUE,include=TRUE}
+
+
+
+# Comparison when not deasonalized
+```{r,echo=FALSE,include=TRUE}
 par(mfrow=c(1,2))
 plot.ACFest(oneset_9yrs_by_month$mean_t[10:94], expression(paste("Sample ACF Mt Rainier for (Water Year) {", z[t],"}")))[2]
 abline(h=0)
@@ -354,37 +259,19 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 
 ```
 
-### Assuming that the trend is present, and the trend is valid, we go about estomating it
 
-```{r,echo=TRUE,include=TRUE}
 
-oneset.u <- oneset_9yrs_by_month$mean_t - m.hat.oneset
+#lets just analyze deseasonalized PACF and ACF  (calendar year)
 
-oneset.w.j <- rowMeans(matrix(oneset.u ,nrow=12))
-oneset.s.j.hat <- rep(oneset.w.j  - mean(oneset.w.j ),8)
-oneset.d <- oneset_9yrs_by_month$mean_t - oneset.s.j.hat
-
-oneset.d.reg <- lm(oneset.d  ~ oneset_9yrs_by_month$nxaxis + I(oneset_9yrs_by_month$nxaxis^2))
-
-plot(oneset_9yrs_by_month$nxaxis,oneset.d,col="blue",xlab="year",typ="b",
-     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (deg C)")),
-     main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),
-     cex=0.5)
-lines(oneset_9yrs_by_month$nxaxis,fitted(oneset.d.reg ),col="purple",lwd=2)
-
-```
-
-#lets just analysie deseasonalized PACF and ACF  (calendar year)
-
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 par(mfrow=c(1,2))
-plot.ACFest(m.hat.oneset, expression(paste("Sample ACF Mt Rainier-Deseason {", z[t],"}")))[2]
+plot.ACFest(m.hat.oneset, expression(paste("SACF-Desea {", z[t],"}")))[2]
 abline(h=0)
 
 ss.pacf <- acf(m.hat.oneset, lag.max=40, type="partial", plot=FALSE)
 xs <- 1:40
 ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF - Deseason")
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="SPACF - Desea")
 points(xs,ys,col="red",cex=0.5)
 n.ss <- length(m.hat.oneset)
 CI.hw <- 1.96/sqrt(n.ss)
@@ -395,32 +282,13 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 ```
 
 
-#lets just analysie deseasonalized /detrended PACF and ACF  (calendar year)
 
-```{r,echo=TRUE,include=TRUE}
-phi <- plot.ACFest(resid(oneset.d.reg), 
-        expression(paste("Sample ACF for {", r[t],"}")))[2]
-        
-oneset.z <- resid(oneset.d.reg)[-1] - phi*resid(oneset.d.reg)[-length(resid(oneset.d.reg))] 
 
-```
 
-Residuals of the fitted AR(1) model
-
-```{r,echo=TRUE,include=TRUE}
-
-plot(oneset_9yrs_by_month$nxaxis[-1],oneset.z ,col="blue",xlab="year",
-     typ="b",ylab=expression(paste(z[t]==r[t]-hat(phi)*r[t-1]," (deg C)")),
-     main=expression(paste("Residuals ",
-       z[t]==r[t]-hat(phi)*r[t-1]," from Fitted AR(1) Model")),
-     cex=0.5)
-
-```
 
 # Inspect the ACF and PACF of the desea/detre series
 
-### TODO - put the n 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 par(mfrow=c(1,2))
 plot.ACFest(oneset.z , expression(paste("Sample ACF {", z[t],"}")))[2]
 abline(h=0)
@@ -439,7 +307,7 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 ```
 
 # Do a test of IID White Noise
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 source("http://faculty.washington.edu/dbp/s519/R-code/diagnostic-tests.R")
 
 plot.figPortmanteau <- function(Qs, quants, p=0, main=NULL)
@@ -462,7 +330,7 @@ plot.figPortmanteau(Q.zs,quants.1.40,2,main=expression(paste("Portmanteau Test o
 
 # Do turning point test
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 results <- turning.point.test(oneset.z)
 round(results$mu,1)
 results$test.sum
@@ -473,7 +341,7 @@ We fail to reject using turning point
 
 # Do different sign test
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 results <- difference.sign.test(oneset.z)
 round(results$mu,1)
 results$test.sum
@@ -483,7 +351,7 @@ round(results$p.value,3)
 We fail to reject using different sign test
 
 #We next do Rank test
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 results <- rank.test(oneset.z)
 round(results$mu,1)
 results$P
@@ -494,18 +362,26 @@ We fail to reject using rank test
 
 # We next do Runs test
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 results <- runs.test(oneset.z)
 round(results$mu,1)
 results$n.runs
 round(results$p.value,3)
 ```
 
-We fail to rehect using Runs test
+We fail to reject using Runs test
+
+```{r,echo=FALSE,include=FALSE}
+source("http://faculty.washington.edu/dbp/s519/R-code/step-down-LD-recursions.R")
+source("http://faculty.washington.edu/dbp/s519/R-code/ar-coeffs-to-acvs.R")
+
+
+
+```
 
 # We next do  ia AICC to determine if we get any AR orders
 
-```{r,echo=TRUE,include=TRUE}
+```{r,echo=FALSE,include=TRUE}
 
 LD.recursions <- function(acvf, p=length(acvf)-1)
   {
@@ -596,25 +472,25 @@ do.it.AICC <- function(ts.in,method="yw",max.order=40)
     c(results.wn,results)
 }
 
-plot(0:40,do.it.AICC(oneset.z),main="Yule-Walker")
-plot(0:40,do.it.AICC(oneset.z,method="burg"),main="Burg")
-plot(0:40,do.it.AICC(oneset.z,method="ols"),main="OLS")
-plot(0:40,do.it.AICC(oneset.z,method="mle"),main="MLE")
+#plot(0:40,do.it.AICC(oneset.z),main="Yule-Walker")
+#plot(0:40,do.it.AICC(oneset.z,method="burg"),main="Burg")
+#plot(0:40,do.it.AICC(oneset.z,method="ols"),main="OLS")
+#plot(0:40,do.it.AICC(oneset.z,method="mle"),main="MLE")
 
 ```
 
 ```{r,echo=TRUE,include=TRUE}
 ar(oneset.z,method="yw")$order
-ar(oneset.z,method="burg")$order # 2 ?
-ar(oneset.z,method="ols")$order  
-ar(oneset.z,method="mle")$order # 2 ?
+ar(oneset.z,method="burg")$order
+ar(oneset.z,method="ols")$order  # 3(?!)
+ar(oneset.z,method="mle")$order
 ```
-Thats surprising, Burg and MLE saying its AR2.
+Confirming, YW,Burg and MLE saying its not AR, but finding orders in others
 
 
-# comment on ACF and PACF 
 
-## Below doing it without detrending/desea ACF
+
+#Below doing it without detrending/desea ACF
 
 ```{r,echo=TRUE,include=TRUE}
 ss.acf <- acf(oneset_9yrs_by_month$mean_t, lag.max=40, plot=FALSE)
@@ -630,33 +506,4 @@ xs <- 1:50
 lines(xs,1.96*sqrt(n.ss-xs)/n.ss,col="magenta",lty="dashed")
 lines(xs,-1.96*sqrt(n.ss-xs)/n.ss,col="magenta",lty="dashed")
 ```
-
-```{r,echo=TRUE,include=TRUE}
-ss.pacf <- acf(oneset_9yrs_by_month$mean_t, lag.max=40, type="partial", plot=FALSE)
-xs <- 1:40
-ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series")
-points(xs,ys,col="red",cex=0.5)
-n.ss <- length(oneset_9yrs_by_month$mean_t)
-CI.hw <- 1.96/sqrt(n.ss)
-abline(h=0,lty="dashed")
-abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
-
-```
-
-```{r,echo=TRUE,include=TRUE}
-source("http://faculty.washington.edu/dbp/s519/R-code/step-down-LD-recursions.R")
-source("http://faculty.washington.edu/dbp/s519/R-code/ar-coeffs-to-acvs.R")
-
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="ACF",ylim=c(-1,1),col="blue",main="Sample and Fitted AR(2) ACFs")
-points(xs,ys,col="red",cex=0.5)
-abline(h=0,lty="dashed")
-ss.ar2 <- ar(oneset_9yrs_by_month$mean_t,aic=FALSE,order.max=2)
-ss.acvf <- ar.coeffs.to.acvs(ss.ar2$ar, 40)
-ss.acf <- ss.acvf/ss.acvf[1]
-lines(0:40,ss.acf,col="blue",lwd=2)
-
-```
-
-## Maybe try which order suffices
 
