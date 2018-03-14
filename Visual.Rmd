@@ -1,0 +1,52 @@
+---
+title: "Location"
+author: "Aji John"
+date: "3/13/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r }
+library(raster)
+library(sp)
+library(rgdal)
+library(leaflet)
+library(jsonlite)
+```
+
+## Show Plots
+
+You can also embed plots, for example:
+
+```{r , echo=FALSE}
+
+#"AX15-A2_hourly.csv  - total outside   2" HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AX15,A-2,A2,AX15-A2,-121.82457,46.75046
+#"AO03-A2_hourly.csv  - total outside   7" HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AO03,A-2,A2,AO03-A2,-121.5487,46.82662
+#"AM16-A2_hourly.csv  - total outside   3HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AM16,A-2,A2,AM16-A2,-121.75737,46.76826
+#"AM16-A1_hourly.csv  - total outside   3"HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AM16,A-1,A1,AM16-A1,-121.75741,46.76852
+#"AE10-A1_hourly.csv  - total outside   2"HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AE10,A-1,A1,AE10-A1,-121.74287,46.7685
+#"AB08-A2_hourly.csv  - total outside   4"HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AB08,A-2,A2,AB08-A2,-121.53724,46.91998
+
+
+m <- leaflet() %>%
+  addTiles() %>%  # Add default OpenStreetMap map tiles
+  addMarkers(lng=-121.82457, lat=46.75046, popup="AX15-A2") %>% 
+  addMarkers(lng=-121.5487, lat=46.82662, popup="AO03-A2") %>% 
+  addMarkers(lng=-121.75737, lat=46.76826, popup="AM16-A2") %>% 
+  addMarkers(lng=-121.75741 ,lat=46.76852, popup="AM16-A1") %>% 
+  addMarkers(lng=-121.74287, lat=46.7685, popup="AE10-A1") %>% 
+  addMarkers(lng=-121.53724, lat=46.91998, popup="AB08-A2")
+m %>% addProviderTiles("Stamen.Terrain")
+m %>% addProviderTiles("Esri.WorldTopoMap")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

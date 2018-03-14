@@ -6,6 +6,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(dplyr)
 ```
 
 # Analysis Mt Rainier
@@ -201,7 +202,7 @@ oneset.d <- oneset_9yrs_by_month$mean_t - oneset.s.j.hat
 oneset.d.reg <- lm(oneset.d  ~ oneset_9yrs_by_month$nxaxis + I(oneset_9yrs_by_month$nxaxis^2))
 
 plot(oneset_9yrs_by_month$nxaxis,oneset.d,col="blue",xlab="year",typ="b",
-     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (thousands)")),
+     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (deg C)")),
      main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),
      cex=0.5)
 lines(oneset_9yrs_by_month$nxaxis,fitted(oneset.d.reg ),col="purple",lwd=2)
@@ -227,15 +228,33 @@ plot(oneset_9yrs_by_month$nxaxis,resid(oneset.d.reg),col="blue",xlab="year",typ=
 phi <- plot.ACFest(resid(oneset.d.reg), 
         expression(paste("Sample ACF for {", r[t],"}")))[2]
 
+#AR(1)
 oneset.z <- resid(oneset.d.reg)[-1] - phi*resid(oneset.d.reg)[-length(resid(oneset.d.reg))] 
 
 isAboveThreshold <- function(X) 
    { X[ ifelse(X > 0.20  , TRUE,FALSE)]
 }
+isBelowThreshold <- function(X) 
+   { X[ ifelse(X < -0.20  , TRUE,FALSE)]
+}
 
 ```
 
+# PACF of Residuals
 
+```{r,echo=FALSE,include=TRUE}
+
+ss.pacf <- acf(resid(oneset.d.reg) , lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(oneset.z )
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+```
 
 
 
@@ -243,15 +262,15 @@ isAboveThreshold <- function(X)
 # Comparison when not deasonalized
 ```{r,echo=FALSE,include=TRUE}
 par(mfrow=c(1,2))
-plot.ACFest(oneset_9yrs_by_month$mean_t[10:94], expression(paste("Sample ACF Mt Rainier for (Water Year) {", z[t],"}")))[2]
+plot.ACFest(oneset_9yrs_by_month$mean_t, expression(paste("Sample ACF-Raw {", z[t],"}")))[2]
 abline(h=0)
 
-ss.pacf <- acf(oneset_9yrs_by_month$mean_t[10:94], lag.max=40, type="partial", plot=FALSE)
+ss.pacf <- acf(oneset_9yrs_by_month$mean_t, lag.max=40, type="partial", plot=FALSE)
 xs <- 1:40
 ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF for Mt Rainier Series(Water year)")
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF-Raw")
 points(xs,ys,col="red",cex=0.5)
-n.ss <- length(oneset_9yrs_by_month$mean_t[10:94])
+n.ss <- length(oneset_9yrs_by_month$mean_t)
 CI.hw <- 1.96/sqrt(n.ss)
 abline(h=0,lty="dashed")
 abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
@@ -286,14 +305,14 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 
 
 
-# Inspect the ACF and PACF of the desea/detre series
+# Inspect the ACF and PACF of the deseasonalized/detrended series
 
 ```{r,echo=FALSE,include=TRUE}
 par(mfrow=c(1,2))
-plot.ACFest(oneset.z , expression(paste("Sample ACF {", z[t],"}")))[2]
+plot.ACFest(resid(oneset.d.reg) , expression(paste("Sample ACF {", z[t],"}")))[2]
 abline(h=0)
 
-ss.pacf <- acf(oneset.z , lag.max=40, type="partial", plot=FALSE)
+ss.pacf <- acf(resid(oneset.d.reg) , lag.max=40, type="partial", plot=FALSE)
 xs <- 1:40
 ys <- ss.pacf$acf[1:40]
 plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF")
@@ -306,7 +325,7 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 
 ```
 
-# Do a test of IID White Noise
+# Do a test of IID White Noise of the residuals
 ```{r,echo=FALSE,include=TRUE}
 source("http://faculty.washington.edu/dbp/s519/R-code/diagnostic-tests.R")
 
@@ -318,20 +337,25 @@ plot.figPortmanteau <- function(Qs, quants, p=0, main=NULL)
     points(hs,Qs,pch=16,col="blue")
     segments(seq(p+0.75,by=1,length=N.Qs),quants,seq(p+1.25,by=1,length=N.Qs),quants,lwd=2,col="red")
 }
+```
 
+# Do a test of IID White Noise of detrended/deasonalized series
 
+```{r,echo=FALSE,include=TRUE}
 
-onoise.acf.zs <- acf(oneset.z, lag.max=40, plot=FALSE)$acf[-1]
-Q.zs <- sapply(1:40,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(oneset.z))})
+onoise.acf.zs <- acf(resid(oneset.d.reg), lag.max=40, plot=FALSE)$acf[-1]
+Q.zs <- sapply(1:40,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(resid(oneset.d.reg)))})
 quants.1.40 <- sapply((1:40),function(dof) {qchisq(0.05,dof,lower=FALSE)})
 
 plot.figPortmanteau(Q.zs,quants.1.40,2,main=expression(paste("Portmanteau Test of Mt Rainier {", z[t],"}")))
 ```
+So, fails in Portmanteau tests
+
 
 # Do turning point test
 
 ```{r,echo=FALSE,include=TRUE}
-results <- turning.point.test(oneset.z)
+results <- turning.point.test(resid(oneset.d.reg))
 round(results$mu,1)
 results$test.sum
 round(results$p.value,3)
@@ -342,7 +366,7 @@ We fail to reject using turning point
 # Do different sign test
 
 ```{r,echo=FALSE,include=TRUE}
-results <- difference.sign.test(oneset.z)
+results <- difference.sign.test(resid(oneset.d.reg))
 round(results$mu,1)
 results$test.sum
 round(results$p.value,3)
@@ -352,7 +376,7 @@ We fail to reject using different sign test
 
 #We next do Rank test
 ```{r,echo=FALSE,include=TRUE}
-results <- rank.test(oneset.z)
+results <- rank.test(resid(oneset.d.reg))
 round(results$mu,1)
 results$P
 round(results$p.value,3)
@@ -363,13 +387,13 @@ We fail to reject using rank test
 # We next do Runs test
 
 ```{r,echo=FALSE,include=TRUE}
-results <- runs.test(oneset.z)
+results <- runs.test(resid(oneset.d.reg))
 round(results$mu,1)
 results$n.runs
 round(results$p.value,3)
 ```
 
-We fail to reject using Runs test
+So, fails all the tests saying that its WN
 
 ```{r,echo=FALSE,include=FALSE}
 source("http://faculty.washington.edu/dbp/s519/R-code/step-down-LD-recursions.R")
@@ -472,6 +496,93 @@ do.it.AICC <- function(ts.in,method="yw",max.order=40)
     c(results.wn,results)
 }
 
+#plot(0:40,do.it.AICC(oneset.z),main="Yule-Walker")
+#plot(0:40,do.it.AICC(oneset.z,method="burg"),main="Burg")
+#plot(0:40,do.it.AICC(oneset.z,method="ols"),main="OLS")
+#plot(0:40,do.it.AICC(oneset.z,method="mle"),main="MLE")
+
+```
+
+Get the AICC
+```{r,echo=TRUE,include=TRUE}
+plot(0:40,do.it.AICC(resid(oneset.d.reg)),main="Yule-Walker")
+plot(0:40,do.it.AICC(resid(oneset.d.reg),method="burg"),main="Burg")
+plot(0:40,do.it.AICC(resid(oneset.d.reg),method="ols"),main="OLS")
+plot(0:40,do.it.AICC(resid(oneset.d.reg),method="mle"),main="MLE")
+```
+
+Determine orders
+
+```{r,echo=TRUE,include=TRUE}
+ar(resid(oneset.d.reg),method="yw")$order
+ar(resid(oneset.d.reg),method="burg")$order
+ar(resid(oneset.d.reg),method="ols")$order  # 2(?!)
+ar(resid(oneset.d.reg),method="mle")$order
+```
+All say AR(2), and AICC concurs
+
+
+
+
+# Do a test of IID White Noise of AR(1)
+
+```{r,echo=FALSE,include=TRUE}
+
+onoise.acf.zs <- acf(oneset.z, lag.max=40, plot=FALSE)$acf[-1]
+Q.zs <- sapply(1:40,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(oneset.z))})
+quants.1.40 <- sapply((1:40),function(dof) {qchisq(0.05,dof,lower=FALSE)})
+
+plot.figPortmanteau(Q.zs,quants.1.40,2,main=expression(paste("Portmanteau Test of Mt Rainier {", z[t],"}")))
+```
+
+# Do turning point test
+
+```{r,echo=FALSE,include=TRUE}
+results <- turning.point.test(oneset.z)
+round(results$mu,1)
+results$test.sum
+round(results$p.value,3)
+```
+
+We fail to reject using turning point
+
+# Do different sign test
+
+```{r,echo=FALSE,include=TRUE}
+results <- difference.sign.test(oneset.z)
+round(results$mu,1)
+results$test.sum
+round(results$p.value,3)
+```
+
+We fail to reject using different sign test
+
+#We next do Rank test
+```{r,echo=FALSE,include=TRUE}
+results <- rank.test(oneset.z)
+round(results$mu,1)
+results$P
+round(results$p.value,3)
+```
+
+We fail to reject using rank test
+
+# We next do Runs test
+
+```{r,echo=FALSE,include=TRUE}
+results <- runs.test(oneset.z)
+round(results$mu,1)
+results$n.runs
+round(results$p.value,3)
+```
+
+We fail to reject using Runs test
+
+# We next do  ia AICC to determine if we get any AR orders ( or AR(1) fitted residuals)
+
+Determine orders
+
+```{r,echo=TRUE,include=TRUE}
 #plot(0:40,do.it.AICC(oneset.z),main="Yule-Walker")
 #plot(0:40,do.it.AICC(oneset.z,method="burg"),main="Burg")
 #plot(0:40,do.it.AICC(oneset.z,method="ols"),main="OLS")
