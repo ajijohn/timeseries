@@ -53,12 +53,12 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r }
 
-#"AX15-A2_hourly.csv  - total outside   2"
-#"AO03-A2_hourly.csv  - total outside   7"
-#"AM16-A2_hourly.csv  - total outside   3
-#"AM16-A1_hourly.csv  - total outside   3"
-#"AE10-A1_hourly.csv  - total outside   2"
-#"AB08-A2_hourly.csv  - total outside   4"
+#"AX15-A2_hourly.csv  - total outside   2 - 3600 ft"
+#"AO03-A2_hourly.csv  - total outside   7 - 3000 ft"
+#"AM16-A2_hourly.csv  - total outside   3 - 4000 ft
+#"AM16-A1_hourly.csv  - total outside   3 - 4000 ft"
+#"AE10-A1_hourly.csv  - total outside   2 - 4935 ft"
+#"AB08-A2_hourly.csv  - total outside   4 - 3208 ft"
 
 
 files<- list.files('./entiredata')
@@ -129,7 +129,7 @@ for (file in files)
     oneset.d.reg <- lm(oneset.d  ~ oneset_9yrs_by_month$nxaxis +        I(oneset_9yrs_by_month$nxaxis^2))
 
     #acf 
-    acfs <- acf(resid(oneset.d.reg),lag.max = 40)$acf
+    acfs <- acf(resid(oneset.d.reg),lag.max = 20)$acf
     
     aboveT <-  isAboveThreshold(acfs)
     belowT <-  isBelowThreshold(acfs)

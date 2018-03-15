@@ -1,0 +1,297 @@
+---
+title: "Mt Rainier Timeseries Analysis"
+output: beamer_presentation
+author: "Aji John, Buckley Lab, UW Biology"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+Climate
+========================================================
+
+```{r, echo=FALSE,include=FALSE}
+library(tidyverse)
+
+theme_Publication <- function(base_size=14, base_family="helvetica") {
+      (theme_foundation(base_size=base_size, base_family=base_family)
+       + theme(plot.title = element_text(face = "bold",
+                                         size = rel(1.2), hjust = 0.5),
+               text = element_text(),
+               panel.background = element_rect(colour = NA),
+               plot.background = element_rect(colour = NA),
+               panel.border = element_rect(colour = NA),
+               axis.title = element_text(face = "bold",size = rel(1)),
+               axis.title.y = element_text(angle=90,vjust =2),
+               axis.title.x = element_text(vjust = -0.2),
+               axis.text = element_text(), 
+               axis.line = element_line(colour="black"),
+               axis.ticks = element_line(),
+               panel.grid.major = element_line(colour="#f0f0f0"),
+               panel.grid.minor = element_blank(),
+               legend.key = element_rect(colour = NA),
+               legend.position = "bottom",
+               legend.direction = "horizontal",
+               legend.key.size= unit(0.2, "cm"),
+               legend.margin = unit(0, "cm"),
+               legend.title = element_text(face="italic"),
+               plot.margin=unit(c(10,5,5,5),"mm"),
+               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+               strip.text = element_text(face="bold")
+          ))
+      
+}
+
+```
+
+</br>
+
+### The term originally denoted a zone of the earth between two lines of latitude, then any region of the earth, and later, a region considered with reference to its atmospheric conditions. (Apple dictionary)
+
+One climate variable - Temperature
+========================================================
+
+### Important as it directly relates to productivity in plants/animals. 
+
+```{r, echo=FALSE,warning=FALSE,include=FALSE,message=FALSE}
+climatedata <- read.csv("data/AB08-A2_hourly.csv")
+climatedata$dt <- strptime(climatedata$DATE, format = "%Y-%m-%d %H:%M:%S")
+climatedata$dt_txn <- as.POSIXct(climatedata$DATE,ormat = "%Y-%m-%d %H:%M:%S")
+# Add month column
+# Add day column
+# Add hour column
+climatedata$month <-format(climatedata$dt_txn,"%m")
+climatedata$day <- format(climatedata$dt_txn,"%d")
+climatedata$hour <- format(climatedata$dt_txn,"%H")
+climatedata$year <- substring(as.character(climatedata$DATE),1,4)
+```
+
+How is it diced ? Temperature
+========================================================
+
+<br>
+
+### How is it used ?
+
+<br>
+
+Parameter     | Context
+------------- | -------------
+Minimum       | Day/Month/Season/Year
+Maximum       | Day/Month/Season/Year
+Diurnal       | Daily (Max - min)
+
+<br>
+<br>
+
+#### A study might use combination of these parameters, but could get complicated by adding other environmental attributes. 
+
+Case study - Mt Rainier sites
+========================================================
+
+
+```{r, echo=FALSE,warning=FALSE,fig=TRUE,message=FALSE,fig.align = "center", fig.width=3, fig.height=4}
+#ggplot needs date in POSIXct
+
+onest <- read.csv("data/AM16-A2_hourly.csv")
+onest$dt <- strptime(onest$DATE, format = "%Y-%m-%d %H:%M:%S")
+str(onest)
+### define function to do filtering ...
+
+filter.with.padding <- function(x,the.filter,iter=1)
+{
+    q <- (length(the.filter)-1)/2
+    n <- length(x)
+    w <- stats::filter(c(rep(x[1],q),x,rep(x[n],q)),the.filter)[(q+1):(q+n)]
+    if(iter > 1) for(i in 2:iter) w <- filter(c(rep(w[1],q),w,rep(w[n],q)),the.filter)[(q+1):(q+n)]
+    return(w)
+}
+
+plot.ACFest <- function(ts, main=NULL, n.lags=40)
+{
+    ts.acf <- acf(ts, lag.max=n.lags, plot=FALSE)
+    n.ts <- length(ts)
+    xs <- 1:n.lags
+    ys <- ts.acf$acf[2:(n.lags+1)]
+    plot(xs,ys,typ="h",xlab="h  (lag)",ylab="ACF",ylim=c(-1,1),col="blue",main=main)
+    points(xs,ys,col="red",cex=0.5)
+    xs <- 1:n.lags
+    xs[1] <- xs[1] - 0.25
+    xs[n.lags] <- xs[n.lags] + 0.25
+    lines(xs,1.96*sqrt(n.ts-xs)/n.ts,col="magenta",lty="dashed")
+    lines(xs,-1.96*sqrt(n.ts-xs)/n.ts,col="magenta",lty="dashed")
+    abline(h=0,lty="dashed")
+    CI.hw <- 1.96/sqrt(n.ts)
+    lines(c(0.75,n.lags+0.25),rep(CI.hw,2),col="blue",lty="dashed")
+    lines(c(0.75,n.lags+0.25),rep(-CI.hw,2),col="blue",lty="dashed")
+    return(ts.acf$acf)
+}
+### overhead III-2
+
+plot(onest$dt,onest$series_xts,col="blue",xlab="year",typ="l",
+     ylab=expression(x[t]),main=expression(paste("Site AB08: A2",
+       " Series from MT Rainier , WA")))
+```
+
+<br>
+
+
+========================================================
+#### Monthly mean
+
+```{r, echo=FALSE,warning=FALSE,fig=TRUE,error=FALSE,message=FALSE,fig.align = "center",out.width = '60%'}
+
+```
+
+Classical Decomposition Model 
+========================================================
+
+<br>
+
+
+
+{\displaystyle y_{t}=T_{t}+S_{t}+Z_{t},}
+
+
+
+
+
+
+Seasonal  
+========================================================
+#### DJF - Winter - Across all years by month
+
+```{r, echo=FALSE,warning=FALSE,fig=TRUE,message=FALSE,error=FALSE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+onest$dt_txn <- as.POSIXct(onest$DATE,ormat = "%Y-%m-%d %H:%M:%S")
+# Add month column
+# Add day column
+# Add hour column
+onest$month <-format(onest$dt_txn,"%m")
+onest$day <- format(onest$dt_txn,"%d")
+onest$hour <- format(onest$dt_txn,"%H")
+
+
+#subset it to only 9 years
+# Removed 1288 rows containing missing values 
+oneset_9yrs <- onest %>% select(c('dt_txn','series_xts','year','month','day','hour')) %>% 
+  filter(!is.na(series_xts) & year > 2008 & year < 2017) %>% as.data.frame() 
+
+
+
+#Summarize by months
+oneset_9yrs_by_month <- oneset_9yrs %>% group_by(year,month) %>% summarise(min_t=min(series_xts),max_t= min(series_xts),mean_t=mean(series_xts),rows=n()) %>% as.data.frame()
+
+# Add key
+oneset_9yrs_by_month$xaxis <- as.double(paste(oneset_9yrs_by_month$year,oneset_9yrs_by_month$month,sep = '.'))
+
+#1 .042 
+#2 .125 
+#3 .208 
+#4 .292 
+#5 .375 
+#6 .458 
+#7 .542 
+#8 .625 
+#9 .708 
+#10 .792  
+#11 .875 
+#12 .958 
+
+#create new xaxis
+oneset_9yrs_by_month$xaxisred <- "0"
+#Redo x-axis
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="01",]$xaxisred = "042"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="02",]$xaxisred = "125"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="03",]$xaxisred = "208"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="04",]$xaxisred = "292"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="05",]$xaxisred = "375"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="06",]$xaxisred = "458"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="07",]$xaxisred = "542"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="08",]$xaxisred = "625"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="09",]$xaxisred = "708"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="10",]$xaxisred = "792"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="11",]$xaxisred = "875"
+oneset_9yrs_by_month[oneset_9yrs_by_month$month=="12",]$xaxisred = "958"
+
+oneset_9yrs_by_month$nxaxis <- as.double(paste(oneset_9yrs_by_month$year,oneset_9yrs_by_month$xaxisred,sep = '.'))
+
+# For every year we should have 12 values
+
+#oneset_9yrs_by_month %>% ggplot(aes(year,mean_t,color=month)) + geom_point() +xlab("Time") + ylab("Mean Temperature (deg C)")
+
+#Applying moving average filter
+m.hat.oneset <- filter.with.padding(oneset_9yrs_by_month$mean_t,c(1/24,rep(1/12,11),1/24))
+
+#plot(oneset_9yrs_by_month$xaxis,oneset_9yrs_by_month$mean_t,col="blue",xlab="year",typ="b",
+#     ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temp Values",cex=0.5)
+#lines(oneset_9yrs_by_month$xaxis,m.hat.oneset,col="red",lwd=2)
+
+plot(oneset_9yrs_by_month$nxaxis,oneset_9yrs_by_month$mean_t,col="blue",xlab="year",typ="b",
+     ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temp Values",cex=0.5)
+lines(oneset_9yrs_by_month$nxaxis,m.hat.oneset,col="red",lwd=2)
+
+```
+
+
+Temporal variation 
+========================================================
+
+<br>
+
+### Important ? Growing Degree Days ~ Phenology
+
+
+
+
+<br>
+<br>
+
+#### Other relationships - variation of it spatially
+
+Diurnal 
+========================================================
+#### DJF - Winter - By year
+
+```{r, echo=FALSE,warning=FALSE,fig=TRUE,error=FALSE,message=FALSE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>%filter(month %in% c('12','01','02')) %>% 
+ggplot(aes(hour,series_xts,group=year,color=year)) + 
+stat_smooth(se = FALSE) +  theme_minimal() +
+ggtitle("Site AB08 - DJF Hourly Temperatures")+
+xlab("Time of day") + ylab("Air Temperature")
+
+```
+
+Diurnal 
+========================================================
+#### JJA - Summer - By year
+
+```{r, echo=FALSE,warning=FALSE,error=FALSE,fig=TRUE,message=FALSE,fig.align = "center",out.width = '60%'}
+#ggplot needs date in POSIXct
+
+climatedata %>%  select(c("DATE","TZ","series_xts", "dt_txn","month","day","hour","year")) %>%filter(month %in% c('06','07','08')) %>% 
+ggplot(aes(hour,series_xts,group=year,color=year)) + 
+stat_smooth(se = FALSE) +  theme_minimal() +
+ggtitle("Site AB08 - JJA Hourly Temperatures")+
+xlab("Time of day") + ylab("Air Temperature") 
+
+```
+
+How is it used ? Temperature
+========================================================
+
+<br>
+
+### How is it used ?
+
+
+
+
+<br>
+<br>
+
+#### Recorded in various ways, by daily, monthly or yearly
