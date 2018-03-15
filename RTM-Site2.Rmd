@@ -238,6 +238,28 @@ isBelowThreshold <- function(X)
    { X[ ifelse(X < -0.20  , TRUE,FALSE)]
 }
 
+#             [,1]
+#  [1,]  1.00000000
+#  [2,]  0.31845701
+#  [3,]  0.27690415
+#  [4,]  0.13480930
+#  [5,]  0.14630801
+#  [6,]  0.09982043
+#  [7,]  0.06316510
+#  [8,]  0.05408614
+#  [9,]  0.08792469
+# [10,]  0.08925481
+# [11,]  0.08399267
+# [12,]  0.14349498
+# [13,]  0.06305739
+# [14,]  0.01957963
+# [15,] -0.08841256
+# [16,] -0.13483877
+# [17,] -0.27140963
+# [18,] -0.18728276
+# [19,] -0.16042680
+# [20,] -0.10562126
+
 ```
 
 # PACF of Residuals
@@ -349,7 +371,7 @@ quants.1.40 <- sapply((1:40),function(dof) {qchisq(0.05,dof,lower=FALSE)})
 
 plot.figPortmanteau(Q.zs,quants.1.40,2,main=expression(paste("Portmanteau Test of Mt Rainier {", z[t],"}")))
 ```
-So, fails in Portmanteau tests
+So, 
 
 
 # Do turning point test
@@ -521,8 +543,50 @@ ar(resid(oneset.d.reg),method="mle")$order
 ```
 All say AR(2), and AICC concurs
 
+# Lets get the AR2 coeffiencients
 
+```{r,echo=FALSE,include=FALSE}
+LD.recursions <- function(acvf, p=length(acvf)-1)
+  {
+    blpc <- vector(mode="list", length=p)
+    phis <- acvf[2]/acvf[1]
+    pev  <- rep(acvf[1],p+1)
+    blpc[[1]] <- phis
+    pacf <- rep(phis,p)
+    pev[2] <- pev[1]*(1-phis^2)
+    if(p > 1)
+      {
+        for(k in 2:p)
+          {
+            old.phis <- phis
+            phis <- rep(0,k)
+            ## compute kth order pacf (reflection coefficient)
+            phis[k] <- (acvf[k+1] - sum(old.phis*acvf[k:2]))/pev[k]
+            phis[1:(k-1)] <- old.phis - phis[k]*rev(old.phis)
+            blpc[[k]] <- phis
+            pacf[k]  <- phis[k]
+            pev[k+1] <- pev[k]*(1-phis[k]^2)
+          }
+      }
+    structure(list(coeffs=phis,innov.var=pev[p+1],pev=pev,pacf=pacf,blpc=blpc))
+  }
+```
 
+#Calculating coefficients using Y-W estimates
+```{r,echo=FALSE,include=TRUE}
+
+mt_rain.pacf <- acf(resid(oneset.d.reg) , lag.max=20, type="partial", plot=FALSE)
+(results <- LD.recursions(as.vector(mt_rain.pacf$acf)))
+
+```
+YW estimations
+```{r,echo=FALSE,include=TRUE}
+
+one.yw <- ar.yw(resid(oneset.d.reg),order.max = 2)
+one.pr <- predict(one.yw,n.ahead = 24)
+month.one = 360.453
+
+```
 
 # Do a test of IID White Noise of AR(1)
 
