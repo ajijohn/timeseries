@@ -158,6 +158,20 @@ plot(oneset_9yrs_by_month$nxaxis,oneset_9yrs_by_month$mean_t,col="blue",xlab="ye
      ylab=expression(paste(x[t]," and ", hat(m)[t]," (deg C)")),main="Monthly Temp Values",cex=0.5)
 lines(oneset_9yrs_by_month$nxaxis,m.hat.oneset,col="red",lwd=2)
 ```
+```{r,echo=FALSE,include=TRUE}
+#png(file='gtemp.png',  width=600, height=320)
+#pdf("mtr.pdf",width=10,height=10)
+svg(filename="mtr.svg", 
+    width=5, 
+    height=4, 
+    pointsize=12)
+par(mar=c(2,2,0,.5)+.5, mgp=c(1.0,.6,0))                   # trim the margins       
+plot(x=oneset_9yrs_by_month$nxaxis,y=oneset_9yrs_by_month$mean_t, ylab=expression(Temperature~~~~(degree~C)), xlab="Year", type='n')    # set up the plot
+grid(lty=1, col=gray(.9))                                  # add a grid
+lines(y=oneset_9yrs_by_month$mean_t,x=oneset_9yrs_by_month$nxaxis, type='o', col=4)
+dev.off() 
+```
+
 # Removing the trend component.
 
 
@@ -185,6 +199,19 @@ plot(1:12,oneset.w.j- mean(oneset.w.j),col="blue",xlab="year",
      ylim=c(-9,9),cex=0.5)
 
 
+```
+
+```{r,echo=FALSE,include=TRUE}
+
+
+oneset.w.j <- rowMeans(matrix(oneset.u ,nrow=12))
+pdf("mtrseason.pdf")
+plot(1:12,oneset.w.j- mean(oneset.w.j),col="blue",xlab="Month",
+     typ="b",ylab=expression(hat(s)[j]),
+     main=expression(),
+     ylim=c(-9,9),cex=0.5)
+grid(lty=1, col=gray(.9))  
+dev.off()
 ```
 
 # Deasonalized data with trend estimate
@@ -216,6 +243,19 @@ plot(oneset_9yrs_by_month$nxaxis,resid(oneset.d.reg),col="blue",xlab="year",typ=
      ylab=expression(paste(r[t] == x[t] - hat(m)[t] - hat(s)[t]," (degC)")),
      main=expression(paste("Residuals {",r[t],"} from Removal of {", hat(m)[t],"} and {",hat(s)[t],"}")),
      cex=0.5)
+
+```
+
+# Plot to save(WN)
+
+```{r,echo=FALSE,include=TRUE}
+pdf("mtresiduals.pdf")
+plot(oneset_9yrs_by_month$nxaxis,resid(oneset.d.reg),col="blue",xlab="Year",typ="b",
+     ylab=expression(paste(r[t] == x[t] - hat(m)[t] - hat(s)[t],"")),
+     main=expression(),
+     cex=0.5)
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
 
 ```
 
@@ -327,24 +367,51 @@ abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
 
 
 
-# Inspect the ACF and PACF of the deseasonalized/detrended series
-
+# Save Inspect the ACF and PACF of the deseasonalized/detrended series'
 ```{r,echo=FALSE,include=TRUE}
-par(mfrow=c(1,2))
-plot.ACFest(resid(oneset.d.reg) , expression(paste("Sample ACF {", z[t],"}")))[2]
-abline(h=0)
 
+#par(mfrow=c(1,2))
+pdf("mtracf.pdf")
+plot.ACFest(resid(oneset.d.reg) , expression())[2]
+abline(h=0)
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
+
+pdf("mtrpacf.pdf")
 ss.pacf <- acf(resid(oneset.d.reg) , lag.max=40, type="partial", plot=FALSE)
 xs <- 1:40
 ys <- ss.pacf$acf[1:40]
-plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF")
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue")
 points(xs,ys,col="red",cex=0.5)
-n.ss <- length(oneset.z )
+n.ss <- length(resid(oneset.d.reg) )
 CI.hw <- 1.96/sqrt(n.ss)
 abline(h=0,lty="dashed")
 abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
 
+```
 
+# Inspect the ACF and PACF of the deseasonalized/detrended series
+
+```{r,echo=FALSE,include=TRUE}
+pdf("mtracfandpacf.pdf")
+par(mfrow=c(1,2))
+
+plot.ACFest(resid(oneset.d.reg) , expression())[2]
+abline(h=0)
+grid(lty=1, col=gray(.9))                                  # add a grid
+ss.pacf <- acf(resid(oneset.d.reg) , lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(resid(oneset.d.reg) )
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
 ```
 
 # Do a test of IID White Noise of the residuals
