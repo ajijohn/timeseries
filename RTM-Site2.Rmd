@@ -258,6 +258,28 @@ grid(lty=1, col=gray(.9))                                  # add a grid
 dev.off()
 
 ```
+# Plot to save QQ(WN)
+
+```{r,echo=FALSE,include=TRUE}
+pdf("mtrresidualsqq.pdf")
+qqnorm(residuals(oneset.d.reg),col='blue',main = "")
+qqline(residuals(oneset.d.reg))
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
+
+```
+
+# Plot to save Portmanteau
+```{r,echo=FALSE,include=TRUE}
+pdf("mtrresidualspt.pdf")
+onoise.acf.zs <- acf(resid(oneset.d.reg), lag.max=40, plot=FALSE)$acf[-1]
+Q.zs <- sapply(1:40,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(resid(oneset.d.reg)))})
+quants.1.40 <- sapply((1:40),function(dof) {qchisq(0.05,dof,lower=FALSE)})
+
+plot.figPortmanteau(Q.zs,quants.1.40,2,main=expression())
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
+```
 
 # ACF of Residuals
 
@@ -492,6 +514,111 @@ source("http://faculty.washington.edu/dbp/s519/R-code/ar-coeffs-to-acvs.R")
 
 ```
 
+# do AR(2) fit
+
+```{r,echo=FALSE,include=TRUE}
+#AR(2)
+phi1 <- 0.2563
+phi2 <- 0.1953  
+oneset.z.ar2 <- resid(oneset.d.reg)[-1] - phi1*resid(oneset.d.reg)[-length(resid(oneset.d.reg))] - phi2*resid(oneset.d.reg)[-length(resid(oneset.d.reg))] 
+
+#par(mfrow=c(1,2))
+pdf("mtracfar2.pdf")
+plot.ACFest(oneset.z.ar2 , expression())[2]
+abline(h=0)
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
+
+pdf("mtrpacfar2.pdf")
+ss.pacf <- acf(oneset.z.ar2 , lag.max=40, type="partial", plot=FALSE)
+xs <- 1:40
+ys <- ss.pacf$acf[1:40]
+plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue")
+points(xs,ys,col="red",cex=0.5)
+n.ss <- length(oneset.z.ar2 )
+CI.hw <- 1.96/sqrt(n.ss)
+abline(h=0,lty="dashed")
+abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
+
+```
+
+# check the residuals for iid test
+
+```{r,echo=FALSE,include=TRUE}
+
+onoise.acf.zs <- acf(oneset.z.ar2, lag.max=40, plot=FALSE)$acf[-1]
+Q.zs <- sapply(1:40,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(oneset.z.ar2))})
+quants.1.40 <- sapply((1:40),function(dof) {qchisq(0.05,dof,lower=FALSE)})
+
+plot.figPortmanteau(Q.zs,quants.1.40,2,main=expression(paste("Portmanteau Test of Mt Rainier {", z[t],"}")))
+```
+
+# Do turning point test
+
+```{r,echo=FALSE,include=TRUE}
+results <- turning.point.test(oneset.z.ar2)
+round(results$mu,1)
+results$test.sum
+round(results$p.value,3)
+```
+
+We fail to reject using turning point
+
+# Do different sign test
+
+```{r,echo=FALSE,include=TRUE}
+results <- difference.sign.test(oneset.z.ar2)
+round(results$mu,1)
+results$test.sum
+round(results$p.value,3)
+```
+
+We fail to reject using different sign test
+
+#We next do Rank test
+```{r,echo=FALSE,include=TRUE}
+results <- rank.test(oneset.z.ar2)
+round(results$mu,1)
+results$P
+round(results$p.value,3)
+```
+
+We fail to reject using rank test
+
+# We next do Runs test
+
+```{r,echo=FALSE,include=TRUE}
+results <- runs.test(oneset.z.ar2)
+round(results$mu,1)
+results$n.runs
+round(results$p.value,3)
+```
+
+# Plot to save QQ(WN)
+
+```{r,echo=FALSE,include=TRUE}
+pdf("mtrresidualsqqar2.pdf")
+qqnorm(oneset.z.ar2,col='blue',main = "")
+qqline(oneset.z.ar2)
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
+
+```
+
+# Plot to save Portmanteau
+```{r,echo=FALSE,include=TRUE}
+pdf("mtrresidualsptar2.pdf")
+onoise.acf.zs <- acf(oneset.z.ar2, lag.max=40, plot=FALSE)$acf[-1]
+Q.zs <- sapply(1:40,function(h) {portmanteau.test.LB(onoise.acf.zs[1:h],length(oneset.z.ar2))})
+quants.1.40 <- sapply((1:40),function(dof) {qchisq(0.05,dof,lower=FALSE)})
+
+plot.figPortmanteau(Q.zs,quants.1.40,2,main=expression())
+grid(lty=1, col=gray(.9))                                  # add a grid
+dev.off()
+```
+
 # We next do  ia AICC to determine if we get any AR orders
 
 ```{r,echo=FALSE,include=TRUE}
@@ -609,6 +736,30 @@ ar(resid(oneset.d.reg),method="ols")$order  # 2(?!)
 ar(resid(oneset.d.reg),method="mle")$order
 ```
 All say AR(2), and AICC concurs
+
+```{r,echo=FALSE,include=FALSE}
+plot.sample.and.AR.ACVFs <- function(ts.in, p, n.lags=40, acf.type="covariance", ar.method="yule", end.of.main=NULL, add.method=FALSE)
+{
+    ts <- ts.in - mean(ts.in)
+    scale.factor <- switch(EXPR=acf.type, covariance=sum(ts^2)/length(ts), correlation=1)
+    for.main <- if(add.method) switch(EXPR=ar.method, yule=" Y-W ", burg=" Burg ", default=" ") else " "
+    V.or.not <- switch(EXPR=acf.type, covariance="ACVF", correlation="ACF")
+    ts.acf <- acf(ts, lag.max=n.lags, type=acf.type, plot=FALSE)
+    xs <- 0:n.lags
+    ys <- ts.acf$acf[1:(n.lags+1)]
+    plot(xs,ys,typ="h",xlab="h  (lag)",ylab=V.or.not,col="blue",main=paste(if(add.method) "Sample and" else "Sample and Fitted",for.main,"AR(",p,") ", V.or.not,"s",end.of.main,sep=""))
+    points(xs,ys,col="red")
+    points(p,ys[p+1],pch=16,col="red")
+    abline(h=0,lty="dashed")
+    ts.ar.p <- ar(ts,aic=FALSE,order.max=p,method=ar.method)
+    ss.acvf <- ARMAacf(ts.ar.p$ar, lag.max=n.lags)*scale.factor
+    lines(xs,ss.acvf,col="blue",lwd=2)
+}
+```
+
+```{r,echo=FALSE,include=TRUE}
+plot.sample.and.AR.ACVFs(oneset_9yrs_by_month$mean_t,2,end.of.main=" for Mt Rainier")
+```
 
 # Lets get the AR2 coeffiencients
 

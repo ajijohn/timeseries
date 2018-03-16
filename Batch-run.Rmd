@@ -60,10 +60,11 @@ When you click the **Knit** button a document will be generated that includes bo
 #"AE10-A1_hourly.csv  - total outside   2 - 4935 ft"
 #"AB08-A2_hourly.csv  - total outside   4 - 3208 ft"
 
+filesins <- c('AX15-A2_hourly.csv','AO03-A2_hourly.csv','AM16-A2_hourly.csv','AM16-A1_hourly.csv','AE10-A1_hourly.csv','AB08-A2_hourly.csv')
 
 files<- list.files('./entiredata')
 #files <- c('TO11-A2_hourly.csv')
-for (file in files)
+for (file in filesins)
 {
    print(paste(file , 'Starting to process  - opening file  ' ))
    # Read the file
@@ -141,6 +142,42 @@ for (file in files)
     #print(paste(file , ' below T ' ,belowT))
     
     print(paste(file , ' - total outside  ' , totalOutside))
+    
+    ss.pacf <- acf(resid(oneset.d.reg) , lag.max=40, type="partial", plot=FALSE)
+    xs <- 1:40
+    ys <- ss.pacf$acf[1:40]
+    plot(xs,ys,typ="h",xlab="h  (lag)",ylab="PACF",ylim=c(-1,1),col="blue",main="Sample PACF")
+    points(xs,ys,col="red",cex=0.5)
+    n.ss <- length(resid(oneset.d.reg))
+    CI.hw <- 1.96/sqrt(n.ss)
+    abline(h=0,lty="dashed")
+    abline(h=c(-CI.hw,CI.hw),col="blue",lty="dashed")
+
+    #Test the orders
+    
+    print(paste('YW',ar(resid(oneset.d.reg),method="yw")$order))
+    print(paste('Burg',ar(resid(oneset.d.reg),method="burg")$order))
+    print(paste('OLS',ar(resid(oneset.d.reg),method="ols")$order))  # 2(?!)
+    print(paste('MLE',ar(resid(oneset.d.reg),method="mle")$order))
+
+    # plot
+    plot(0:40,do.it.AICC(resid(oneset.d.reg)),main="Yule-Walker")
+    print(paste(file,'YW - AICC',min(do.it.AICC(resid(oneset.d.reg)))))
+    plot(0:40,do.it.AICC(resid(oneset.d.reg),method="burg"),main="Burg")
+    print(paste(file,'Burg - AICC',min(do.it.AICC(resid(oneset.d.reg),method="burg"))))
+    try ({
+    plot(0:40,do.it.AICC(resid(oneset.d.reg),method="ols"),main="OLS")
+    print(paste(file,'OLS - AICC',min(do.it.AICC(resid(oneset.d.reg),method="ols"))))
+       plot(0:40,do.it.AICC(resid(oneset.d.reg),method="mle"),main="MLE")
+    print(paste(file,'MLE - AICC',min(do.it.AICC(resid(oneset.d.reg),method="mle"))))
+    })
+ 
+    
+    #Print coefficients
+    #ar.yw(resid(oneset.d.reg),order.max = 1)
+    ar2coeff <- ar.yw(resid(oneset.d.reg),order.max = 2)
+    print(paste0(file,'-----ar2 coeff------'))
+    print(ar2coeff)
     
     })
     
