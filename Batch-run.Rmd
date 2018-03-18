@@ -43,6 +43,111 @@ isAboveThreshold <- function(X)
 isBelowThreshold <- function(X) 
    { X[ ifelse(X < -0.20  , TRUE,FALSE)]
 }
+
+
+library(tidyverse)
+library(dplyr)
+
+```
+
+# We next do  ia AICC to determine if we get any AR orders
+
+```{r,echo=FALSE,include=TRUE}
+
+LD.recursions <- function(acvf, p=length(acvf)-1)
+  {
+    blpc <- vector(mode="list", length=p)
+    phis <- acvf[2]/acvf[1]
+    pev  <- rep(acvf[1],p+1)
+    blpc[[1]] <- phis
+    pacf <- rep(phis,p)
+    pev[2] <- pev[1]*(1-phis^2)
+    if(p > 1)
+      {
+        for(k in 2:p)
+          {
+            old.phis <- phis
+            phis <- rep(0,k)
+            ## compute kth order pacf (reflection coefficient)
+            phis[k] <- (acvf[k+1] - sum(old.phis*acvf[k:2]))/pev[k]
+            phis[1:(k-1)] <- old.phis - phis[k]*rev(old.phis)
+            blpc[[k]] <- phis
+            pacf[k]  <- phis[k]
+            pev[k+1] <- pev[k]*(1-phis[k]^2)
+          }
+      }
+    structure(list(coeffs=phis,innov.var=pev[p+1],pev=pev,pacf=pacf,blpc=blpc))
+  }
+
+###
+### source("http://faculty.washington.edu/dbp/s519/R-code/AICC.R")
+###
+
+AICC <- function(ts.in,ar.coeffs)
+    {
+        ts <- ts.in - mean(ts.in)
+        n <- length(ts)
+        var.ts <- sum(ts^2)/n
+        p <- length(ar.coeffs)
+        LD.stuff <- step.down.LD.recursions(ar.coeffs,var=var.ts)
+        pacf <- rep(0,p)
+        for(k in 1:p) pacf[k] <- LD.stuff$coeffs[[k]][k]
+        rs <- rep(1,n)
+        for(k in 1:p) rs[k] <- 1/prod(1-pacf[k:p]^2)
+        ss <- ts[1]^2/rs[1]
+        for(j in 2:n)
+            {
+                if(j < p+2) coeffs <- LD.stuff$coeffs[[j-1]]
+                n.coeffs <- length(coeffs)
+                ss <- ss + (ts[j] - sum(ts[(j-1):(j-n.coeffs)]*coeffs))^2/rs[j]
+            }
+        structure(list(AICC=n + n*log(2*pi/n) + n*log(ss) + sum(log(rs)) + 2*(p+1)*n/(n-p-2),
+                       rs=rs,
+                       pacf=pacf,
+                       n.coeffs=n.coeffs,
+                       coeffs=coeffs,
+                       LD.stuff=LD.stuff))
+    }
+
+### version of AICC function that operates on ACVF ...
+
+AICC.given.ACVF <- function(ts.in,acvf,n.parms)
+  {
+    ## NOTE: ASSUMES ts.in AND acvf HAVE SAME LENGTH
+    ts <- ts.in - mean(ts.in)
+    n <- length(ts)
+    var.ts <- sum(ts^2)/n
+    LD.stuff <- LD.recursions(acvf)
+    pacf <- LD.stuff$pacf
+    rs <- rep(1,n)
+    for(k in 1:(n-1)) rs[k] <- 1/prod(1-pacf[k:(n-1)]^2)
+    ss <- ts[1]^2/rs[1]
+    for(j in 2:n)
+      {
+        coeffs <- LD.stuff$blpc[[j-1]]
+        ss <- ss + (ts[j] - sum(ts[(j-1):1]*coeffs))^2/rs[j]
+      }
+    structure(list(AICC=n + n*log(2*pi/n) + n*log(ss) + sum(log(rs)) + 2*(n.parms+1)*n/(n-n.parms-2),
+                   rs=rs,
+                   pacf=pacf,
+                   coeffs=coeffs,
+                   LD.stuff=LD.stuff))
+  }
+do.it.AICC <- function(ts.in,method="yw",max.order=40)
+{
+    ts <- ts.in - mean(ts.in)
+    n.ts <- length(ts)
+    ts.var <- sum(ts^2)/n.ts
+    results.wn <- AICC.given.ACVF(ts,c(ts.var,rep(0,n.ts-1)),0)$AICC
+    results <- sapply(1:max.order,function(i) AICC.given.ACVF(ts,ARMAacf(ar(ts,aic=FALSE,order.max=i,method=method)$ar,lag=n.ts-1)*ts.var,i)$AICC)
+    c(results.wn,results)
+}
+
+#plot(0:40,do.it.AICC(oneset.z),main="Yule-Walker")
+#plot(0:40,do.it.AICC(oneset.z,method="burg"),main="Burg")
+#plot(0:40,do.it.AICC(oneset.z,method="ols"),main="OLS")
+#plot(0:40,do.it.AICC(oneset.z,method="mle"),main="MLE")
+
 ```
 
 ## R Markdown
@@ -129,6 +234,16 @@ for (file in filesins)
 
     oneset.d.reg <- lm(oneset.d  ~ oneset_9yrs_by_month$nxaxis +        I(oneset_9yrs_by_month$nxaxis^2))
 
+    summary(oneset.d.reg)
+    oneset.d.reg
+    print(oneset.d.reg.3$coefficients)
+    #plot it
+    plot(oneset_9yrs_by_month$nxaxis,oneset.d,col="blue",xlab="year",typ="b",
+     ylab=expression(paste(d[t] == x[t] - hat(s)[t]," and ", hat(m)[t]," (deg C)")),
+     main=expression(paste("Deseasonalized Data {", d[t], "} and Trend Estimate {",hat(m)[t],"}")),
+     cex=0.5)
+    lines(oneset_9yrs_by_month$nxaxis,fitted(oneset.d.reg ),col="purple",lwd=2)
+    
     #acf 
     acfs <- acf(resid(oneset.d.reg),lag.max = 20)$acf
     

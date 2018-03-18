@@ -900,3 +900,75 @@ lines(xs,1.96*sqrt(n.ss-xs)/n.ss,col="magenta",lty="dashed")
 lines(xs,-1.96*sqrt(n.ss-xs)/n.ss,col="magenta",lty="dashed")
 ```
 
+#forecast
+# create 2017 file
+```{r,echo=TRUE,include=TRUE}
+
+
+#subset it to only 9 years
+# Removed 1288 rows containing missing values 
+oneset_9yrs_2017 <- onest %>% select(c('dt_txn','series_xts','year','month','day','hour')) %>% 
+  filter(!is.na(series_xts) & year > 2016) %>% as.data.frame() 
+
+
+
+#Summarize by months
+oneset_9yrs_2017_by_month <- oneset_9yrs_2017 %>% group_by(year,month) %>% summarise(min_t=min(series_xts),max_t= min(series_xts),mean_t=mean(series_xts),rows=n()) %>% as.data.frame()
+
+# Add key
+oneset_9yrs_2017_by_month$xaxis <- as.double(paste(oneset_9yrs_2017_by_month$year,oneset_9yrs_2017_by_month$month,sep = '.'))
+
+#1 .042 
+#2 .125 
+#3 .208 
+#4 .292 
+#5 .375 
+#6 .458 
+#7 .542 
+#8 .625 
+#9 .708 
+#10 .792  
+#11 .875 
+#12 .958 
+
+#create new xaxis
+oneset_9yrs_2017_by_month$xaxisred <- "0"
+#Redo x-axis
+oneset_9yrs_2017_by_month[oneset_9yrs_2017_by_month$month=="01",]$xaxisred = "042"
+oneset_9yrs_2017_by_month[oneset_9yrs_2017_by_month$month=="02",]$xaxisred = "125"
+oneset_9yrs_2017_by_month[oneset_9yrs_2017_by_month$month=="03",]$xaxisred = "208"
+oneset_9yrs_2017_by_month[oneset_9yrs_2017_by_month$month=="04",]$xaxisred = "292"
+oneset_9yrs_2017_by_month[oneset_9yrs_2017_by_month$month=="05",]$xaxisred = "375"
+oneset_9yrs_2017_by_month[oneset_9yrs_2017_by_month$month=="06",]$xaxisred = "458"
+
+
+oneset_9yrs_2017_by_month$nxaxis <- as.double(paste(oneset_9yrs_2017_by_month$year,oneset_9yrs_2017_by_month$xaxisred,sep = '.'))
+
+# For every year we should have 12 values
+
+#oneset_9yrs_by_month %>% ggplot(aes(year,mean_t,color=month)) + geom_point() +xlab("Time") + ylab("Mean Temperature (deg C)")
+
+pdf("mtrpredicyed-2017.pdf")
+plot(oneset_9yrs_2017_by_month$nxaxis,oneset_9yrs_2017_by_month$mean_t,col="blue",xlab="Year",typ="b",
+     ylab=expression(paste("Temperature [",degree,"C]")),main="",cex=0.75)
+x_p <- arima.sim( list("ar"=c(.25,0.19)),n=6)
+y_p <- x_p + oneset.s.j.hat[1:6] + m.hat.oneset[1:6]
+lines(x=oneset_9yrs_2017_by_month$nxaxis,y=oneset_9yrs_2017_by_month$mean_t-y_p)
+points(x=oneset_9yrs_2017_by_month$nxaxis,y=y_p,pch=8,col="red",cex=0.375)
+legend("bottomright", legend=expression(x[t],hat(x)[t],x[t]-hat(x)[t]),  col=c("blue","red","black"),pch=c(1,8,NA),lty=c(NA,NA,"solid"),pt.cex=c(0.75,0.375,1),inset=0.01)
+dev.off()
+```
+
+```{r,echo=TRUE,include=TRUE}
+pdf("mtrpredicyed-allyears.pdf")
+plot(x=oneset_9yrs_by_month$nxaxis,y=oneset_9yrs_by_month$mean_t,col="blue",xlab="Year",
+     ylab=expression(paste("Temperature [",degree,"C]")),main="")
+points(x=oneset_9yrs_by_month$nxaxis,y=y,col="red")
+lines(x=oneset_9yrs_by_month$nxaxis,y=y)
+legend("bottomright", legend=expression(x[t],hat(x)[t]),  col=c("blue","red"),pch=c(1,8),lty=c(NA,"solid"),pt.cex=c(0.75,0.375),inset=0.01)
+dev.off()
+```
+
+
+
+

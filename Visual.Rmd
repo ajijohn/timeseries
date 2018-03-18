@@ -49,4 +49,6 @@ m %>% addProviderTiles("Stamen.Terrain")
 m %>% addProviderTiles("Esri.WorldTopoMap")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r }
+acf(oneset_9yrs_2017_by_month$mean_t,lag.max = 40,plot = TRUE)
+```
