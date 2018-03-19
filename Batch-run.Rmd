@@ -167,7 +167,7 @@ When you click the **Knit** button a document will be generated that includes bo
 
 filesins <- c('AX15-A2_hourly.csv','AO03-A2_hourly.csv','AM16-A2_hourly.csv','AM16-A1_hourly.csv','AE10-A1_hourly.csv','AB08-A2_hourly.csv')
 
-combinedlist <- list()
+combineddf <- data.frame(row.names=1:96)
 
 files<- list.files('./entiredata')
 #files <- c('TO11-A2_hourly.csv')
@@ -229,6 +229,10 @@ for (file in filesins)
     print(summary(oneset_9yrs_by_month$mean_t))
     print(sd(oneset_9yrs_by_month$mean_t)/sqrt(length(oneset_9yrs_by_month$mean_t)))  
     print(t.test(oneset_9yrs_by_month$mean_t))
+    df <- data.frame(oneset_9yrs_by_month$mean_t)
+    colnames(df) <- c(file)
+    combineddf <- cbind(combineddf, df)
+    
     print(se(oneset_9yrs_by_month$mean_t))  
     
     #Applying moving average filter
@@ -308,12 +312,36 @@ for (file in filesins)
 
 ```
 
-## Including Plots
+## ANOVA tests
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, echo=FALSE}
+str(combineddf)
+colnames(combineddf) <- c('AX15-A2','AO03-A2','AM16-A2','AM16-A1','AE10-A1','AB08-A2')
+plot(combineddf$`AX15-A2`)
+lines(combineddf$`AX15-A2`,col='red')
+lines(combineddf$`AO03-A2`,col='green')
+lines(combineddf$`AM16-A2`,col='blue')
+lines(combineddf$`AM16-A1`,col='yellow')
+lines(combineddf$`AE10-A1`,col='purple')
+lines(combineddf$`AB08-A2`,col='pink')
+
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r, echo=FALSE}
+
+
+dati = c(combineddf$`AX15-A2`, combineddf$`AO03-A2`, combineddf$`AM16-A2`, combineddf$`AM16-A1`,combineddf$`AE10-A1`,combineddf$`AB08-A2`)
+
+groups = factor(rep(letters[1:6], each = 96))
+
+bartlett.test(dati, groups)
+fit = lm(formula = dati ~ groups)
+anova (fit)
+
+```
+
+
+
