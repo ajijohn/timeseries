@@ -167,6 +167,8 @@ When you click the **Knit** button a document will be generated that includes bo
 
 filesins <- c('AX15-A2_hourly.csv','AO03-A2_hourly.csv','AM16-A2_hourly.csv','AM16-A1_hourly.csv','AE10-A1_hourly.csv','AB08-A2_hourly.csv')
 
+combinedlist <- list()
+
 files<- list.files('./entiredata')
 #files <- c('TO11-A2_hourly.csv')
 for (file in filesins)
@@ -222,6 +224,12 @@ for (file in filesins)
     # For every year we should have 12 values
 
     try ({
+      
+    #Descriptive Statistics
+    print(summary(oneset_9yrs_by_month$mean_t))
+    print(sd(oneset_9yrs_by_month$mean_t)/sqrt(length(oneset_9yrs_by_month$mean_t)))  
+    print(t.test(oneset_9yrs_by_month$mean_t))
+    print(se(oneset_9yrs_by_month$mean_t))  
     
     #Applying moving average filter
     m.hat.oneset <- filter.with.padding(oneset_9yrs_by_month$mean_t,c(1/24,rep(1/12,11),1/24))
