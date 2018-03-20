@@ -233,7 +233,7 @@ for (file in filesins)
     colnames(df) <- c(file)
     combineddf <- cbind(combineddf, df)
     
-    print(se(oneset_9yrs_by_month$mean_t))  
+    #print(se(oneset_9yrs_by_month$mean_t))  
     
     #Applying moving average filter
     m.hat.oneset <- filter.with.padding(oneset_9yrs_by_month$mean_t,c(1/24,rep(1/12,11),1/24))
@@ -318,15 +318,23 @@ You can also embed plots, for example:
 
 ```{r, echo=FALSE}
 str(combineddf)
+#par( xpd=TRUE)
 colnames(combineddf) <- c('AX15-A2','AO03-A2','AM16-A2','AM16-A1','AE10-A1','AB08-A2')
-plot(combineddf$`AX15-A2`)
-lines(combineddf$`AX15-A2`,col='red')
-lines(combineddf$`AO03-A2`,col='green')
-lines(combineddf$`AM16-A2`,col='blue')
-lines(combineddf$`AM16-A1`,col='yellow')
-lines(combineddf$`AE10-A1`,col='purple')
-lines(combineddf$`AB08-A2`,col='pink')
-
+plot(x=oneset_9yrs_by_month$nxaxis,y=combineddf$`AX15-A2`,xlab="Year",
+     ylab=expression(paste("Temperature [",degree,"C]")),main="")
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AX15-A2`,col='red',pch = 0)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AX15-A2`,col='red',pch = 0)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AO03-A2`,col='green',pch = 1)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AO03-A2`,pch = 1)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A2`,col='blue',pch = 2)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A2`,col='blue',pch = 2)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A1`,col='yellow',pch = 3)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A1`,col='yellow',pch = 3)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AE10-A1`,col='purple',pch = 4)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AE10-A1`,col='purple',pch = 4)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AB08-A2`,col='pink',pch = 5)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AB08-A2`,col='pink',pch = 5)
+legend("topright",  legend=expression(AX15-A2,AO03-A2,AM16-A2,AM16-A1,AE10-A1,AB08-A2),  pch=c(0,1,2,3,4,5),col=c('red','green','blue','yellow','purple','pink'),pt.cex=c(1,1,1,1,1,1))
 
 ```
 
