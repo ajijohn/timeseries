@@ -1,0 +1,69 @@
+---
+title: "Location"
+author: "Aji John"
+date: "3/13/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r }
+library(raster)
+library(sp)
+library(rgdal)
+library(leaflet)
+library(jsonlite)
+```
+
+```{r }
+mysites <- read.csv('data/more-mclim.csv')
+```
+## Show Plots
+
+You can also embed plots, for example:
+
+```{r , echo=FALSE}
+
+#"AX15-A2_hourly.csv  - total outside   2" HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AX15,A-2,A2,AX15-A2,-121.82457,46.75046
+#"AO03-A2_hourly.csv  - total outside   7" HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AO03,A-2,A2,AO03-A2,-121.5487,46.82662
+#"AM16-A2_hourly.csv  - total outside   3HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AM16,A-2,A2,AM16-A2,-121.75737,46.76826
+#"AM16-A1_hourly.csv  - total outside   3"HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AM16,A-1,A1,AM16-A1,-121.75741,46.76852
+#"AE10-A1_hourly.csv  - total outside   2"HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AE10,A-1,A1,AE10-A1,-121.74287,46.7685
+#"AB08-A2_hourly.csv  - total outside   4"HilleRisLambers,Forest_Dyn,yes,hobo_ibutton,AB08,A-2,A2,AB08-A2,-121.53724,46.91998
+
+#Meera
+# Paradise 0 N46.77052 W121.72423 1485
+# Paradise 1 N46.77720 W121.71932 1612
+# Paradise 2 N46.78129 W121.72012 1680
+# Paradise 3 N46.79138 W121.71759 1803
+# Paradise 4 N46.79733 W121.71069 1901
+# Paradise 5 N46.81059 W121.71203 2030
+
+# Glacier Basin 1 N46.55380 W121.34.829 1668
+# Glacier Basin 2 N46.55368 W121.35.583 1740
+# Glacier Basin 3 N46.55.556 W121.35.930 1809
+# Glacier Basin 4 N46.53.854 W121.41.985 1940
+# Glacier Basin 5 N46.53.744 W121.42.294 2020
+
+m <- leaflet() %>%
+  addTiles()   # Add default OpenStreetMap map tiles
+m %>% addProviderTiles("Stamen.Terrain")
+m %>% addProviderTiles("Esri.WorldTopoMap")
+
+m %>% addMarkers(lng=mysites$Longitude, lat=mysites$Latitude, popup=mysites$Plot)
+
+
+
+```
+
+```{r }
+acf(oneset_9yrs_2017_by_month$mean_t,lag.max = 40,plot = TRUE)
+```
