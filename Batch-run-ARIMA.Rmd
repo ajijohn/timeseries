@@ -1,0 +1,329 @@
+---
+title: "Batch-Run"
+author: "Aji John"
+date: "3/13/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+filter.with.padding <- function(x,the.filter,iter=1)
+{
+    q <- (length(the.filter)-1)/2
+    n <- length(x)
+    w <- stats::filter(c(rep(x[1],q),x,rep(x[n],q)),the.filter)[(q+1):(q+n)]
+    if(iter > 1) for(i in 2:iter) w <- filter(c(rep(w[1],q),w,rep(w[n],q)),the.filter)[(q+1):(q+n)]
+    return(w)
+}
+
+plot.ACFest <- function(ts, main=NULL, n.lags=40)
+{
+    ts.acf <- acf(ts, lag.max=n.lags, plot=FALSE)
+    n.ts <- length(ts)
+    xs <- 1:n.lags
+    ys <- ts.acf$acf[2:(n.lags+1)]
+    plot(xs,ys,typ="h",xlab="h  (lag)",ylab="ACF",ylim=c(-1,1),col="blue",main=main)
+    points(xs,ys,col="red",cex=0.5)
+    xs <- 1:n.lags
+    xs[1] <- xs[1] - 0.25
+    xs[n.lags] <- xs[n.lags] + 0.25
+    lines(xs,1.96*sqrt(n.ts-xs)/n.ts,col="magenta",lty="dashed")
+    lines(xs,-1.96*sqrt(n.ts-xs)/n.ts,col="magenta",lty="dashed")
+    abline(h=0,lty="dashed")
+    CI.hw <- 1.96/sqrt(n.ts)
+    lines(c(0.75,n.lags+0.25),rep(CI.hw,2),col="blue",lty="dashed")
+    lines(c(0.75,n.lags+0.25),rep(-CI.hw,2),col="blue",lty="dashed")
+    return(ts.acf$acf)
+}
+
+isAboveThreshold <- function(X) 
+   { X[ ifelse(X > 0.20  , TRUE,FALSE)]
+}
+isBelowThreshold <- function(X) 
+   { X[ ifelse(X < -0.20  , TRUE,FALSE)]
+}
+
+
+library(tidyverse)
+library(dplyr)
+
+```
+
+# We next do  ia AICC to determine if we get any AR orders
+
+```{r,echo=FALSE,include=TRUE}
+
+LD.recursions <- function(acvf, p=length(acvf)-1)
+  {
+    blpc <- vector(mode="list", length=p)
+    phis <- acvf[2]/acvf[1]
+    pev  <- rep(acvf[1],p+1)
+    blpc[[1]] <- phis
+    pacf <- rep(phis,p)
+    pev[2] <- pev[1]*(1-phis^2)
+    if(p > 1)
+      {
+        for(k in 2:p)
+          {
+            old.phis <- phis
+            phis <- rep(0,k)
+            ## compute kth order pacf (reflection coefficient)
+            phis[k] <- (acvf[k+1] - sum(old.phis*acvf[k:2]))/pev[k]
+            phis[1:(k-1)] <- old.phis - phis[k]*rev(old.phis)
+            blpc[[k]] <- phis
+            pacf[k]  <- phis[k]
+            pev[k+1] <- pev[k]*(1-phis[k]^2)
+          }
+      }
+    structure(list(coeffs=phis,innov.var=pev[p+1],pev=pev,pacf=pacf,blpc=blpc))
+  }
+
+###
+### source("http://faculty.washington.edu/dbp/s519/R-code/AICC.R")
+###
+
+AICC <- function(ts.in,ar.coeffs)
+    {
+        ts <- ts.in - mean(ts.in)
+        n <- length(ts)
+        var.ts <- sum(ts^2)/n
+        p <- length(ar.coeffs)
+        LD.stuff <- step.down.LD.recursions(ar.coeffs,var=var.ts)
+        pacf <- rep(0,p)
+        for(k in 1:p) pacf[k] <- LD.stuff$coeffs[[k]][k]
+        rs <- rep(1,n)
+        for(k in 1:p) rs[k] <- 1/prod(1-pacf[k:p]^2)
+        ss <- ts[1]^2/rs[1]
+        for(j in 2:n)
+            {
+                if(j < p+2) coeffs <- LD.stuff$coeffs[[j-1]]
+                n.coeffs <- length(coeffs)
+                ss <- ss + (ts[j] - sum(ts[(j-1):(j-n.coeffs)]*coeffs))^2/rs[j]
+            }
+        structure(list(AICC=n + n*log(2*pi/n) + n*log(ss) + sum(log(rs)) + 2*(p+1)*n/(n-p-2),
+                       rs=rs,
+                       pacf=pacf,
+                       n.coeffs=n.coeffs,
+                       coeffs=coeffs,
+                       LD.stuff=LD.stuff))
+    }
+
+### version of AICC function that operates on ACVF ...
+
+AICC.given.ACVF <- function(ts.in,acvf,n.parms)
+  {
+    ## NOTE: ASSUMES ts.in AND acvf HAVE SAME LENGTH
+    ts <- ts.in - mean(ts.in)
+    n <- length(ts)
+    var.ts <- sum(ts^2)/n
+    LD.stuff <- LD.recursions(acvf)
+    pacf <- LD.stuff$pacf
+    rs <- rep(1,n)
+    for(k in 1:(n-1)) rs[k] <- 1/prod(1-pacf[k:(n-1)]^2)
+    ss <- ts[1]^2/rs[1]
+    for(j in 2:n)
+      {
+        coeffs <- LD.stuff$blpc[[j-1]]
+        ss <- ss + (ts[j] - sum(ts[(j-1):1]*coeffs))^2/rs[j]
+      }
+    structure(list(AICC=n + n*log(2*pi/n) + n*log(ss) + sum(log(rs)) + 2*(n.parms+1)*n/(n-n.parms-2),
+                   rs=rs,
+                   pacf=pacf,
+                   coeffs=coeffs,
+                   LD.stuff=LD.stuff))
+  }
+do.it.AICC <- function(ts.in,method="yw",max.order=40)
+{
+    ts <- ts.in - mean(ts.in)
+    n.ts <- length(ts)
+    ts.var <- sum(ts^2)/n.ts
+    results.wn <- AICC.given.ACVF(ts,c(ts.var,rep(0,n.ts-1)),0)$AICC
+    results <- sapply(1:max.order,function(i) AICC.given.ACVF(ts,ARMAacf(ar(ts,aic=FALSE,order.max=i,method=method)$ar,lag=n.ts-1)*ts.var,i)$AICC)
+    c(results.wn,results)
+}
+
+#plot(0:40,do.it.AICC(oneset.z),main="Yule-Walker")
+#plot(0:40,do.it.AICC(oneset.z,method="burg"),main="Burg")
+#plot(0:40,do.it.AICC(oneset.z,method="ols"),main="OLS")
+#plot(0:40,do.it.AICC(oneset.z,method="mle"),main="MLE")
+
+
+get.best.arima <- function(x.ts, maxord = c(1,1,1,1,1,1))
+ {
+   best.aic <- 1e8
+   n <- length(x.ts)
+   for (p in 0:maxord[1]) for(d in 0:maxord[2]) for(q in 0:maxord[3])
+     for (P in 0:maxord[4]) for(D in 0:maxord[5]) for(Q in 0:maxord[6])
+     {
+        fit <- arima(x.ts, order = c(p,d,q),
+                           seas = list(order = c(P,D,Q),
+                           frequency(x.ts)), method = "CSS")
+        fit.aic <- -2 * fit$loglik + (log(n) + 1) * length(fit$coef)
+        if (fit.aic < best.aic)
+        {
+best.aic <- fit.aic
+          best.fit <- fit
+          best.model <- c(p,d,q,P,D,Q)
+} }
+   list(best.aic, best.fit, best.model)
+ }
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r }
+
+#"AX15-A2_hourly.csv  - total outside   2 - 3600 ft"
+#"AO03-A2_hourly.csv  - total outside   7 - 3000 ft"
+#"AM16-A2_hourly.csv  - total outside   3 - 4000 ft
+#"AM16-A1_hourly.csv  - total outside   3 - 4000 ft"
+#"AE10-A1_hourly.csv  - total outside   2 - 4935 ft"
+#"AB08-A2_hourly.csv  - total outside   4 - 3208 ft"
+
+filesins <- c('AX15-A2_hourly.csv','AO03-A2_hourly.csv','AM16-A2_hourly.csv','AM16-A1_hourly.csv','AE10-A1_hourly.csv','AB08-A2_hourly.csv')
+
+combineddf <- data.frame(row.names=1:96)
+
+#files<- list.files('./entiredata')
+files <- c('TO11-A2_hourly.csv')
+for (file in files)
+{
+   print(paste(file , 'Starting to process  - opening file  ' ))
+   # Read the file
+   onest <- read.csv(paste("entiredata/" , file, sep = ""))
+   # Update the tumestamp
+   onest$dt <- strptime(onest$DATE, format = "%Y-%m-%d %H:%M:%S")
+   # add the year
+   onest$year <- substring(as.character(onest$DATE),1,4)
+   # add txn date
+   onest$dt_txn <- as.POSIXct(onest$DATE,ormat = "%Y-%m-%d %H:%M:%S")
+   # Add month column
+   # Add day column
+   # Add hour column
+   onest$month <-format(onest$dt_txn,"%m")
+   onest$day <- format(onest$dt_txn,"%d")
+   onest$hour <- format(onest$dt_txn,"%H")
+
+
+   #subset it to only 9 years
+   # Removed 1288 rows containing missing values 
+   oneset_9yrs <- onest %>% select(c('dt_txn','series_xts','year','month','day','hour')) %>% 
+    filter(!is.na(series_xts) & year > 2008 & year < 2017) %>% as.data.frame() 
+
+
+
+   #Summarize by months
+   oneset_9yrs_by_month <- oneset_9yrs %>% group_by(year,month) %>%          summarise(min_t=min(series_xts),max_t=          min(series_xts),mean_t=mean(series_xts),rows=n()) %>% as.data.frame()
+
+   # Add key
+   oneset_9yrs_by_month$xaxis <- as.double(paste(oneset_9yrs_by_month$year,oneset_9yrs_by_month$month,sep = '.'))
+
+   #create new xaxis
+   oneset_9yrs_by_month$xaxisred <- "0"
+   #Redo x-axis
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="01",]$xaxisred = "042"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="02",]$xaxisred = "125"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="03",]$xaxisred = "208"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="04",]$xaxisred = "292"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="05",]$xaxisred = "375"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="06",]$xaxisred = "458"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="07",]$xaxisred = "542"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="08",]$xaxisred = "625"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="09",]$xaxisred = "708"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="10",]$xaxisred = "792"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="11",]$xaxisred = "875"
+   oneset_9yrs_by_month[oneset_9yrs_by_month$month=="12",]$xaxisred = "958"
+
+   oneset_9yrs_by_month$nxaxis <- as.double(paste(oneset_9yrs_by_month$year,oneset_9yrs_by_month$xaxisred,sep =     '.'))
+
+    # For every year we should have 12 values
+
+    try ({
+      
+    #Descriptive Statistics
+    print(summary(oneset_9yrs_by_month$mean_t))
+    print(sd(oneset_9yrs_by_month$mean_t)/sqrt(length(oneset_9yrs_by_month$mean_t)))  
+    print(t.test(oneset_9yrs_by_month$mean_t))
+
+    
+    #print(se(oneset_9yrs_by_month$mean_t))  
+    
+    #Applying moving average filter
+   best.arima.oneset <- get.best.arima( oneset_9yrs_by_month$mean_t,
+                                       maxord = c(2,2,2,2,2,2))
+    
+    })
+    
+}
+
+```
+
+## ANOVA tests
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+str(combineddf)
+#par( xpd=TRUE)
+colnames(combineddf) <- c('AX15-A2','AO03-A2','AM16-A2','AM16-A1','AE10-A1','AB08-A2')
+plot(x=oneset_9yrs_by_month$nxaxis,y=combineddf$`AX15-A2`,xlab="Year",
+     ylab=expression(paste("Temperature [",degree,"C]")),main="")
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AX15-A2`,col='red',pch = 0)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AX15-A2`,col='red',pch = 0)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AO03-A2`,col='green',pch = 1)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AO03-A2`,pch = 1)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A2`,col='blue',pch = 2)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A2`,col='blue',pch = 2)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A1`,col='yellow',pch = 3)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A1`,col='yellow',pch = 3)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AE10-A1`,col='purple',pch = 4)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AE10-A1`,col='purple',pch = 4)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AB08-A2`,col='pink',pch = 5)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AB08-A2`,col='pink',pch = 5)
+legend("topright",  legend=expression(AX15-A2,AO03-A2,AM16-A2,AM16-A1,AE10-A1,AB08-A2),  pch=c(0,1,2,3,4,5),col=c('red','green','blue','yellow','purple','pink'),pt.cex=c(1,1,1,1,1,1))
+
+```
+
+#save
+```{r, echo=FALSE}
+pdf("mtrcombined.pdf")
+#par( xpd=TRUE)
+colnames(combineddf) <- c('AX15-A2','AO03-A2','AM16-A2','AM16-A1','AE10-A1','AB08-A2')
+plot(x=oneset_9yrs_by_month$nxaxis,y=combineddf$`AX15-A2`,xlab="Year",
+     ylab=expression(paste("Temperature [",degree,"C]")),main="")
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AX15-A2`,col='red',pch = 0)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AX15-A2`,col='red',pch = 0)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AO03-A2`,col='green',pch = 1)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AO03-A2`,pch = 1)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A2`,col='blue',pch = 2)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A2`,col='blue',pch = 2)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A1`,col='yellow',pch = 3)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AM16-A1`,col='yellow',pch = 3)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AE10-A1`,col='purple',pch = 4)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AE10-A1`,col='purple',pch = 4)
+lines(oneset_9yrs_by_month$nxaxis,combineddf$`AB08-A2`,col='pink',pch = 5)
+points(oneset_9yrs_by_month$nxaxis,combineddf$`AB08-A2`,col='pink',pch = 5)
+legend("topright",  legend=expression(AX15-A2,AO03-A2,AM16-A2,AM16-A1,AE10-A1,AB08-A2),  pch=c(0,1,2,3,4,5),col=c('red','green','blue','yellow','purple','pink'),pt.cex=c(1,1,1,1,1,1))
+dev.off()
+```
+
+```{r, echo=FALSE}
+
+
+dati = c(combineddf$`AX15-A2`, combineddf$`AO03-A2`, combineddf$`AM16-A2`, combineddf$`AM16-A1`,combineddf$`AE10-A1`,combineddf$`AB08-A2`)
+
+groups = factor(rep(letters[1:6], each = 96))
+
+bartlett.test(dati, groups)
+fit = lm(formula = dati ~ groups)
+anova (fit)
+
+```
+Variance is not equal.
+
+
